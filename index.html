@@ -1,27 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Cryptids of the United States</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device width,initial-scale=1.0">
-    <meta name="description" content="" />
-
-    <!-- adding my stylesheet -->
-    <link rel="stylesheet" href="css/style.css">
-
-    <!-- adding my Google font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
-
+ <head>
+  <title>
+   Twin Lakes State Park
+  </title>
+  <meta charset="utf-8"/>
+  <meta content="width=device width,inital-scale=1" name="viewport"/>
+  <meta content="" name="description">
+   <!-- adding my Google font -->
+   <link href="https://fonts.googleapis.com" rel="preconnect"/>
+   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+   <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"/>
+   <link href="https://fonts.googleapis.com/css2?family=Quattrocento:wght@400;700&display=swap" rel="stylesheet">
+   <!-- adding my stylesheet -->
+   <link href="css/style.css" rel="stylesheet"/>
     <!-- Calls for the ArcGIS API's CSS file and JS library. -->
-    <link rel="stylesheet" href="https://js.arcgis.com/4.30/esri/themes/light/main.css">
-    <script src="https://js.arcgis.com/4.30/"></script>
-
-    <!-- Adding the modules needed for a full-screen map app -->
-    <script>  
-      
-      // sets the AMD modules
+    <link href="https://js.arcgis.com/4.30/esri/themes/light/main.css" rel="stylesheet">
+     <script src="https://js.arcgis.com/4.30/">
+     </script>
+     <!-- Adding the modules needed for a full-screen map app -->
+     <script>
       require(["esri/config", 
       "esri/Map", 
       "esri/views/MapView",
@@ -36,44 +34,673 @@
       "esri/widgets/Editor",
       "esri/widgets/Legend",
       "esri/core/reactiveUtils",
+      "esri/widgets/LayerList",
+      "esri/form/elements/FieldElement",
+      "esri/form/elements/inputs/TextAreaInput",
+      "esri/popup/support/FieldInfoFormat",
+      "esri/layers/VectorTileLayer",
+      "esri/renderers/SimpleRenderer",
+      "esri/symbols/SimpleLineSymbol",
+      "esri/widgets/Home"
       ], 
-      function(esriConfig, Map, MapView, Basemap, BasemapGallery, Expand, Locate, Search, Graphic, GraphicsLayer, FeatureLayer, Editor, Legend, reactiveUtils) {   
-        let cryptidLayerView;
+      function(esriConfig, Map, MapView, Basemap, BasemapGallery, Expand, Locate, Search, Graphic, GraphicsLayer, FeatureLayer, Editor, Legend, reactiveUtils, LayerList, FieldElement, TextAreaInput, FieldInfoFormat, VectorTileLayer, SimpleRenderer,SimpleLineSymbol,Home) {   
+        let editBirdLayer, editIssuesLayer;
         esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurA0NJnJge5mvBzdWw05KZVSc-rH0g5ATkOEM72zKXv9kE7x87aUFvshXADkQU53T8CakkL1B1R2r7I2_9kfS1-XHaF7MVYxQ6VLd5p6tEgpzr75twGhsRz6fK1dSQ2ogOJ1_dHzcsbRTtsGi03Zua1qchYuESnptzJ80EJ1mYqWJo3iuugUMeoYeXbWxZQfRu9bQKBf9ibtwnTc5YG16I7WxJOj3SrYYt-VrPMyknXjtAT1_V1XfrGt6";
         // creates the map and assigns initial basemap
+        const vectorTileLayer = new VectorTileLayer({
+          portalItem: {
+            id: "8421c3eb83b84327812b8958fb545813"
+          }
+        });
+
         const map = new Map({
-          basemap: "arcgis/modern-antique" // Basemap layer service 
+          basemap: new Basemap({
+            baseLayers: [vectorTileLayer]
+          })
         });
 
-        // sets center point (via long and lat) and zoom level
         const view = new MapView({
+          container: "viewDiv",
           map: map,
-          center: [-78.27761257959591, 37.17324020526729], // Longitude, latitude
-          zoom: 16, // Zoom level
-          container: "viewDiv" // Div element
+          center: [-78.2726, 37.1732],
+          zoom: 15
         });
 
-        // adding the constructor for the graphicslayer
-        const graphicsLayer = new GraphicsLayer();  
-        map.add(graphicsLayer);
-       
+        // Define a unique value renderer and symbols
+        const parklayerRenderer = {
+            type: "simple",
+            symbol: {
+                type: "simple-fill",
+                color: "rgba(129,141,120,0.2)",
+                outline: {
+                    style: "solid",
+                    color: "rgba(129,141,120,0.8)",
+                    width: "3px"
+                }
+            }
+        };
         
-        // creates the search box
-        const searchWidget = new Search({
-          view: view
+        const parkLayer = new FeatureLayer({
+          // URL to the service
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/4",
+          renderer: parklayerRenderer,
+          minScale: 300000,
+          maxScale: 200,
+          title: "Park Boundary"
+        });
+
+        const trailslayerRenderer = new SimpleRenderer({
+          symbol: new SimpleLineSymbol({
+            width: 2,
+            color: "#A553B7",
+            join: "round",
+            style: "short-dot"
+          }),
+        });
+
+        const trailLabels = {
+          symbol: {
+            type: "text",
+            color: "#63316d",
+            haloColor: "#FFFFFF",
+            haloSize: "1px",
+            font: {
+              size: 9,
+              weight: "bold"
+            }
+          },
+          labelPlacement: "below-along",  // places label along the trail
+          labelExpressionInfo: {
+            expression: "$feature.Trail_Name"  // change to your field name
+          },
+          repeatLabel: true,              // 👈 Enable label repetition along the line
+          repeatLabelDistance: 200,
+          minScale: 5000
+        };
+
+
+        const trailsLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/2",
+          title: "Hiking Trails",
+          renderer: trailslayerRenderer,
+          labelingInfo: [trailLabels],
+          labelsVisible: true,
+          popupEnabled: true,
+          minScale: 10000   
+        });
+
+        //add popup to trails layer 
+        trailsLayer.popupTemplate = {
+            title: "Trail Name: {Trail_Name}",
+            content: [
+              {
+                type: "text",
+                text: "<b>Blaze color:</b> {Blaze}"
+              },
+              /* {
+              type: "media", // ← this is important; the overall type should be "media"
+              mediaInfos: [
+                  {
+                  type: "image", // ← this is the type of media inside the mediaInfos array
+                  caption: "<div style='text-align: center'>{Blaze}</div>",
+                  value: {
+                      sourceURL: "https://img.icons8.com/?size=50&id=j2enLUaK6V7Q&format=png&color={BlazeHex}"
+                  }
+                  }
+              ]
+              }, */
+              {
+                type: "text",
+                text: "<b>Mileage:</b> {expression/mileage} mi"
+              },
+              {
+                type: "text",
+                text: "<b>Usage:</b> {TRAIL_USER} <br><br> <em>H = Hiking<br>B = Biking<br>MB = Mountain Biking<br>E = Equestrian</em>"
+              },
+              {
+                type: "text",
+                text: "<b>Difficulty:</b> {Difficulty}"
+              },
+              {
+                type: "text",
+                text: "<b>Surface:</b> {MainSurfac}"
+              }
+            ],
+            expressionInfos: [
+            {
+              name: "mileage",
+              title: "Mileage",
+              expression: `
+                var miles = $feature.Shape__Length * 0.0005681818;
+                return Round(miles, 1);
+              `
+            }
+          ]
+        };
+
+
+
+
+
+        const lodginglayerRenderer = {
+            type: "unique-value",
+            field: "Type",
+            uniqueValueInfos: [
+                {
+                value: "cabin",
+                label: "Cabin",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/cabin.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "tent_popup",
+                label: "Camping Area",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/tent.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "25-ft-rv",
+                label: "25-foot RV",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/rv25.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "30-ft-rv",
+                label: "30-foot RV",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/rv30.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "36-ft-rv",
+                label: "36-foot RV",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/rv36.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                }
+            ]
+        };
+
+        //const to make the lodging labels
+        const lodgingLabels = {
+          symbol: {
+            type: "text",
+            color: "#603913",
+            haloColor: "#F4EEE3",
+            haloSize: "1px",
+            font: {
+              size: "13px",
+              family: "Roboto",
+              weight: "bold"
+            }
+          },
+          labelPlacement: "above-right",
+          labelExpressionInfo: {
+            expression: "$feature.Label"
+          },
+          minScale: 4000
+        };
+        
+
+        const lodgingLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/1",
+          renderer: lodginglayerRenderer,
+          title: "Lodging Locations",
+          labelingInfo: [lodgingLabels], // adding the labels
+          popupEnabled: true
+        });
+
+        //add popup to lodging layer 
+        lodgingLayer.popupTemplate = {
+          title: "{Label}",
+          content: [
+            {
+                type: "text",
+                text: "{Description}"
+            },
+            {
+                type: "text",
+                text: "<em>To learn more about renting this particular site, and cabins and camping (tents and RVs) in general, please visit <a href='https://www.dcr.virginia.gov/state-parks/twin-lakes#cabins_camping'>Twin Lakes State Park lodging</a>.</em>"
+            }
+
+          ]
+
+        };
+      
+        
+        
+        const amenitieslayerRenderer = {
+            type: "unique-value",
+            field: "Type",
+            uniqueValueInfos: [
+                {
+                value: "bath_house",
+                label: "Bath House",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/bathhouse.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "boat_ramp",
+                label: "Boat Ramp",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/boatramp.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "boat_rental",
+                label: "Boat Rental",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/boatrental.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "conference_center",
+                label: "Conference Center",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/conferencecenter.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "contact_station",
+                label: "Contact Station",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/contactstation.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "dumping_station",
+                label: "Dumping Station",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/dumpingstation.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "firewood",
+                label: "Firewood",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/firewood.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "fishing_pier",
+                label: "Fishing Pier",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/fishingpier.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "gazebo",
+                label: "Gazebo",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/gazebo.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "gifts_shopping",
+                label: "Gifts/Shopping",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/giftsshopping.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "park_office",
+                label: "Park Office",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/contactstation.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "parking",
+                label: "Parking",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/parking.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "picnic_shelter",
+                label: "Picnic Shelter",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/picnicshelter.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "playground",
+                label: "Playground",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/playground.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "restroom",
+                label: "Restrooms",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/restroom.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "swim_complex",
+                label: "Snack Bar",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/snackbar.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "swimming",
+                label: "Swimming",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/swimming.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "trash_recycling",
+                label: "Trash/Recycling",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/trashrecycling.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "vending_drink",
+                label: "Vending/Drink",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/vendingdrink.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                }
+            ]
+        };
+
+        //const to make the amenities labels
+        const amenitiesLabels = {
+          symbol: {
+            type: "text",
+            color: "#636d5d",
+            haloColor: "#F4EEE3",
+            haloSize: "1px",
+            font: {
+              size: "11px",
+              family: "Roboto",
+              weight: "bold"
+            }
+          },
+          labelPlacement: "below-center",
+          labelExpressionInfo: {
+            expression: "$feature.Label"
+          },
+          minScale: 4000
+        };
+        
+        const amenitiesLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/0",
+          renderer: amenitieslayerRenderer,
+          title: "Park Amenities",
+          popupEnabled: true,
+          labelingInfo: [amenitiesLabels] // adding the labels
         });
 
 
-        // Create an Expand instance for the Search widget and set the content
-        // property to the DOM node
-        const searchExpand = new Expand({
-          view: view,
-          content: searchWidget
+
+
+        function hashStringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let color = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+            return "000000".substring(0, 6 - color.length) + color;
+        };
+        
+        
+        const birdnotesTextarea = new FieldElement({
+            fieldName: "OBSER_NOTES",
+            label: "Additional Notes",
+            description: "Add some additional notes",
+            input: {
+                type: "text-area"
+            }
+        });
+        
+        // Define a simple renderer and symbol
+        const birdslayerRenderer = {
+          type: "simple",
+          symbol: {
+            type: "picture-marker",
+            url: "	https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=000000",
+            width: "16px",
+            height: "16px"
+          }
+        }
+        
+        const birdsLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/birdobsv/FeatureServer",
+          renderer: birdslayerRenderer,
+          title: "Bird Sightings",
+          definitionExpression: "1=1", // optional, just a placeholder if needed
+          // 👇 This sets the template name that appears in the editor
+          featureReduction: null,
+          popupEnabled: true,
+          outFields: ["*"],
+          // 👇 Here's the key part!
+          editingEnabled: true,
+          preferredTimeZone: "America/New_York",
+          templates: [{
+            name: "Add bird sighting", // This is the custom label that replaces "New Feature"
+            description: "Add a new bird sighting",
+            prototype: {
+              attributes: {}
+            }
+          }]
         });
 
-        // Add the expand instance to the ui
-        view.ui.add(searchExpand, "top-right");
+        //add popup to birds layer 
+        birdsLayer.popupTemplate = {
+          title: "{BIRD_NAME}",
+          content: [
+            {
+              type: "text",
+              text: "<b>Date Observed:</b> {DATE_OBSER_NEW}"
+            },
+            {
+                type: "text",
+                text: "<b>Time Observed:</b> {TIME_OBSER_NEW}"
+            },
+            {
+                type: "text",
+                text: "<b>Observation Notes:</b> {OBSER_NOTES}"
+            },
+            {
+                type: "text",
+                text: "<b>Observer:</b> {OBSERVER_NAME}"
+            }
+          ]
+        };
 
+
+        const issuenotesTextarea = new FieldElement({
+            fieldName: "issuenotes",
+            label: "Additional Notes",
+            description: "Add some additional notes",
+            input: {
+                type: "text-area"
+            }
+        });
+        
+        const issuesRenderer = {
+            type: "unique-value",
+            field: "issuetype",
+            uniqueValueInfos: [
+                {
+                value: "trailblock",
+                label: "Trail Blockage",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/blockedpath.png",
+                    width: "22px",
+                    height: "22px"
+                }
+                },
+                {
+                value: "litter",
+                label: "Litter",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/litter.png",
+                    width: "22px",
+                    height: "22px"
+                }
+                },
+                {
+                value: "animalinsect",
+                label: "Animal or Insect",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/animalinsect.png",
+                    width: "22px",
+                    height: "22px"
+                }
+                }
+            ]
+        };
+        
+
+        const issuesLayer = new FeatureLayer({
+            url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/6",
+            renderer: issuesRenderer,
+            title: "Park Issues",
+            popupEnabled: true,
+            outFields: ["*"],
+            editingEnabled: true,
+            templates: [
+                {
+                name: "Report trail blockage",
+                description: "Report a blocked or impassable trail",
+                prototype: {
+                    attributes: {
+                    issuetype: "trailblock"
+                    }
+                }
+                },
+                {
+                name: "Report litter",
+                description: "Report trash or litter in the park",
+                prototype: {
+                    attributes: {
+                    issuetype: "litter"
+                    }
+                }
+                },
+                {
+                name: "Report animal or insect",
+                description: "Report an animal or insect encounter or concern",
+                prototype: {
+                    attributes: {
+                    issuetype: "animalinsect"
+                    }
+                }
+                }
+            ]
+            });
+
+            //add popup to issues layer 
+            issuesLayer.popupTemplate = {
+            title: "{issuetype}",
+            content: [
+              {
+                type: "text",
+                text: "<b>Issue Notes:</b> {issuenotes}"
+              },
+              {
+                type: "text",
+                text: "<b>Issue reported by:</b> {issuereporter}"
+              }
+            ]
+            };
+
+        //adding the feature layer to the map
+        map.add(parkLayer);
+        map.add(trailsLayer);
+        map.add(lodgingLayer);
+        map.add(amenitiesLayer);
+        map.add(birdsLayer);
+        map.add(issuesLayer);
+
+
+
+        view.when(() => {
 
         // create the locate button
         const locateBtn = new Locate({
@@ -82,999 +709,652 @@
 
         // Add the locate widget to the top left corner of the view
         view.ui.add(locateBtn, {
-          position: "top-right"
+          position: "top-left",
+          index: 1
         });
 
-        // Custom Basemap List
-        const customBasemaps = [
-            new Basemap({
-                portalItem: {
-                    id: "f35ef07c9ed24020aadd65c8a65d3754"  // Modern Antique Basemap ID
-                },
-                thumbnailUrl: "https://www.arcgis.com/sharing/rest/content/items/f35ef07c9ed24020aadd65c8a65d3754/info/thumbnail/thumbnail1584383047375.jpeg"
-            }),
-            new Basemap({
-                portalItem: {
-                    id: "67ab7f7c535c4687b6518e6d2343e8a2"  // Ocean Basemap ID
-                },
-                thumbnailUrl: "https://www.arcgis.com/sharing/rest/content/items/67ab7f7c535c4687b6518e6d2343e8a2/info/thumbnail/thumbnail1561651100093.jpeg" // Correct URL for thumbnail
-            }),
-            new Basemap({
-                portalItem: {
-                    id: "826498a48bd0424f9c9315214f2165d4"  // Colored Pencil Basemap ID
-                },
-                thumbnailUrl: "https://www.arcgis.com/sharing/rest/content/items/826498a48bd0424f9c9315214f2165d4/info/thumbnail/thumbnail1580490854424.jpeg"
-            }),
-            new Basemap({
-                portalItem: {
-                    id: "867895a71a1840399476fc717e76bb43"  // Mid-Century Basemap ID
-                },
-                thumbnailUrl: "https://www.arcgis.com/sharing/rest/content/items/867895a71a1840399476fc717e76bb43/info/thumbnail/thumbnail1563382006810.jpeg"
-            }),
-            new Basemap({
-                portalItem: {
-                    id: "75a3ce8990674a5ebd5b9ab66bdab893"  // Newspaper Basemap ID
-                },
-                thumbnailUrl: "https://www.arcgis.com/sharing/rest/content/items/75a3ce8990674a5ebd5b9ab66bdab893/info/thumbnail/thumbnail1563382193586.jpeg"
-            }),
-            new Basemap({
-                portalItem: {
-                    id: "2e8a3ccdfd6d42a995b79812b3b0ebc6"  // Outdoor Basemap ID
-                },
-                thumbnailUrl: "https://www.arcgis.com/sharing/rest/content/items/2e8a3ccdfd6d42a995b79812b3b0ebc6/info/thumbnail/thumbnail1655484449400.png"
-            }),
-            new Basemap({
-                portalItem: {
-                    id: "52bdc7ab7fb044d98add148764eaa30a"  // Imagery(WGS84) Basemap ID
-                },
-                thumbnailUrl: "https://www.arcgis.com/sharing/rest/content/items/52bdc7ab7fb044d98add148764eaa30a/info/thumbnail/thumbnail1576867503263.jpeg"
-            })
-        ];
+        // Add home widget
+        const homeBtn = new Home({
+          view: view
+        });
 
-        // builds basemap gallery using custom basemaps
-        const basemapGallery = new BasemapGallery({
+        // Add the home button to the top left corner of the view
+        view.ui.add(homeBtn, {
+          position: "top-left",
+          index: 2
+        });
+
+
+
+          const editor = new Editor({
           view: view,
-          source: customBasemaps
-        });
-
-        // Create an Expand instance for the basemap gallery and set the content
-        // property to the DOM node of the basemap gallery widget
-        const bgExpand = new Expand({
-          view: view,
-          content: basemapGallery
-        });
-
-        // Add the expand instance to the ui
-        view.ui.add(bgExpand, "top-left");
-
-        
-        const colorhex = "4D2042";
-        
-        
-        const cryptidsRenderer = {
-          type: "unique-value",
-          legendOptions: {
-            title: "Cryptid Type"
-          },
-          field: "CryptidType",
-          uniqueValueInfos: [{
-            value: "bipedalhumanoid",
-            label: "Two legs",
-            symbol: {
-              type: "picture-marker",
-              url: "https://img.icons8.com/?id=MPUi3OWjGmbY&format=png&color=" + colorhex,
-              width: "30px",
-              height: "30px"
-            }
-          }, {
-            value: "quadruped",
-            label: "Four legs",
-            symbol: {
-              type: "picture-marker",
-              url: "https://img.icons8.com/?size=100&id=81kgi239Cuwa&format=png&color=" + colorhex,
-              width: "30px",
-              height: "30px"
-            }
-          }, {
-            value: "wings",
-            label: "Wings",
-            symbol: {
-              type: "picture-marker",
-              url: "https://img.icons8.com/?size=100&id=xjR5QLocktta&format=png&color=" + colorhex,
-              width: "30px",
-              height: "30px"
-            }
-          }, {
-            value: "fins",
-            label: "Fins",
-            symbol: {
-              type: "picture-marker",
-              url: "https://img.icons8.com/?size=100&id=118573&format=png&color=" + colorhex,
-              width: "30px",
-              height: "30px"
-            }
-          }, {
-            value: "othertype",
-            label: "Other",
-            symbol: {
-              type: "picture-marker",
-              url: "https://img.icons8.com/?size=100&id=51Tr6obvkPgA&format=png&color=" + colorhex,
-              width: "30px",
-              height: "30px"
-            }
-          }]
-        };
-
-        
-        //const to make the cryptid labels
-        const cryptidLabels = {
-          symbol: {
-            type: "text",
-            color: "#4D2042",
-            haloColor: "#F4EEE3",
-            haloSize: "1px",
-            font: {
-              size: "11px",
-              family: "Playfair Display",
-              weight: "normal",
-              style: "italic"
-            }
-          },
-          labelPlacement: "below-center",
-          labelExpressionInfo: {
-            expression: "$feature.CryptidName"
-          }
-        };
-        
-        const clusterConfig = {
-          type: "cluster",
-          clusterRadius: "100px",
-          popupTemplate: {
-            title: "Cluster summary",
-            content: "This cluster represents {cluster_count} cryptids.",
-            fieldInfos: [
-              {
-                fieldName: "cluster_count",
-                format: {
-                  places: 0,
-                  digitSeparator: true
+          layerInfos: [{
+            layer: birdsLayer, // pass in the feature layer,
+            customCreateText: "Add bird sighting",
+            formTemplate:  {
+              elements: [
+                { 
+                  type: "field",
+                  fieldName: "BIRD_NAME",
+                  label: "Bird Name"
+                },
+                {
+                  type: "field",
+                  fieldName: "DATE_OBSER_NEW",
+                  label: "Observation Date"
+                },
+                {
+                  type: "field",
+                  fieldName: "TIME_OBSER_NEW",
+                  label: "Observation Time"
+                },
+                birdnotesTextarea,
+                {
+                  type: "field",
+                  fieldName: "OBSERVER_NAME",
+                  label: "Observer Name or Initials"
                 }
-              }
-            ]
+              ]
+            },
+            enabled: true, // Default is true, set to false to disable editing functionality.
+            addEnabled: true, // Default is true, set to false to disable the ability to add a new feature.
+            updateEnabled: true, // Default is true, set to false to disable the ability to edit an existing feature.
+            deleteEnabled: true, // Default is true, set to false to disable the ability to delete features.
+            attributeUpdatesEnabled: true, // Default is true, set to false to disable the ability to edit attributes in the update workflow.
+            geometryUpdatesEnabled: true, // Default is true, set to false to disable the ability to edit feature geometries in the update workflow.
+            attachmentsOnCreateEnabled: true, //Default is true, set to false to disable the ability to work with attachments while creating features.
+            attachmentsOnUpdateEnabled: true //Default is true, set to false to disable the ability to work with attachments while updating/deleting features.
           },
-          clusterMinSize: "24px",
-          clusterMaxSize: "60px",
-
-          symbol: {
-            type: "simple-marker",
-            style: "circle",
-            color: "#b7a5b3",
-            outline: {
-              color: "rgba(77, 32, 66, 0.5)",
-              width: 6
-            }
+          {
+            layer: issuesLayer,
+            formTemplate: {
+              elements: [
+                {
+                  type: "field",
+                  fieldName: "issuetype",
+                  label: "Issue Type"
+                },
+                issuenotesTextarea,
+                {
+                  type: "field",
+                  fieldName: "issuereporter",
+                  label: "Reporter Name or Initials"
+                }
+              ]
+            },
+            enabled: true,
+            addEnabled: true,
+            updateEnabled: true,
+            deleteEnabled: true,
+            attributeUpdatesEnabled: true,
+            geometryUpdatesEnabled: true,
+            attachmentsOnCreateEnabled: true,
+            attachmentsOnUpdateEnabled: true
           },
-
-          labelingInfo: [
-            {
-              deconflictionStrategy: "none",
-              labelExpressionInfo: {
-                expression: "Text($feature.cluster_count, '#,###')"
-              },
-              symbol: {
-                type: "text",
-                color: "#4D2042",
-                font: {
-                  weight: "bold",
-                  family: "Playfair Display",
-                  size: "14px"
-                }
-              },
-              labelPlacement: "center-center"
-            }
-          ]
-        };
-
-        //adding the const for the feature layer
-        const cryptidsLayer = new FeatureLayer({
-        url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/5",
-        
-        renderer: cryptidsRenderer, // calling the icon
-
-        featureReduction: clusterConfig, // adding clustering
-
-        labelingInfo: [cryptidLabels], // adding the labels
-
-        outFields: ["CryptidName"]
-
-        });
-        //add popup to cryptids layer 
-        cryptidsLayer.popupTemplate = {
-          title: "{CryptidName}",
-          content: [
-            {type:"text",
-              text: "<b>Date: {SightingDate}"
-            },
-            {type: "text",
-              text: "<b>Type:</b> {CryptidType}"
-            },
-            {type: "text",
-              text: "<b>Description:</b> {Description}"
-            },
-            {type: "text",
-              text:"<b>Locomotion:</b> {Locomotion}"
-            },
-            {type:"text",
-              text:"<b>Environment:</b> {Environment}"
-            },
-            {type:"text",
-              text: "<b>Spotted by:</b> {RecorderName}"
-            },
-            {type: "attachments"}
-
-          ]
-
-        }
-
-
-        const parkLayer = new FeatureLayer({
-          // URL to the service
-          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/4"
-        });
-
-        const lakeLayer = new FeatureLayer({
-          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/3"
-        });
-
-        const trailsLayer = new FeatureLayer({
-          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/2"
-        });
-
-        const lodgingLayer = new FeatureLayer({
-          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/1"
-        });
-      
-        const amenitiesLayer = new FeatureLayer({
-          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/0"
-        });
-
-
-
-
-
-        //adding the feature layer to the map
-        map.add(parkLayer);
-        map.add(lakeLayer);
-        map.add(trailsLayer);
-        map.add(lodgingLayer);
-        mapp.add(amenitiesLayer);
-        map.add(cryptidsLayer);
-
-
-        // Set the point layer's LayerInfo
-        const pointInfos = {
-          layer: cryptidsLayer
-        }
-
-
-        // Loop through the webmap's layers and set an edit configuration for each
-        view.map.layers.forEach((layer) => {
-            // Specify a few of the fields to edit within the form
-            editCryptidsLayer = {
-              layer: layer,
-              formTemplate: {
-                elements: [
-                {
-                  type: "field",
-                  fieldName: "CryptidType",
-                  label: "What's its basic body form?"
-                },
-                {
-                  type: "field",
-                  fieldName: "CryptidName",
-                  label: "Do you know what kind of cryptid it is?"
-                },
-                {
-                  type: "field",
-                  fieldName: "Description",
-                  label: "Describe the creature you saw:"
-                },
-                {
-                  type: "field",
-                  fieldName: "Locomotion",
-                  label: "How was it moving?"
-                },
-                {
-                  type: "field",
-                  fieldName: "Environment",
-                  label: "What were its surroundings like?"
-                },
-                {
-                  type: "field",
-                  fieldName: "RecorderName",
-                  label: "Your name or initials:"
-                },
-                {
-                  type: "field",
-                  fieldName: "SightingDate",
-                  label: "Date and time seen:"
-                }
-                ]
-              }
-            };
-          
-        });
-
-
-        // Create a custom group to separate the different cryptids.
-        // This function takes a 'grouping' object containing a feature template and feature layer.
-
-        function customGroup(grouping) {
-            let groupHeading = "What basic form is it? Click the icon and add to the map, and then add details.";
-            return groupHeading;
-        }
-
-
-        const editor = new Editor({
-            view: view,
-            // Pass in the configurations.
-            layerInfos: [editCryptidsLayer],
-            // Override the default template behavior of the Editor widget
-            supportingWidgetDefaults: {
-                featureTemplates: {
-                groupBy: customGroup
-                }
-            },
+          {
+            layer: parkLayer,
+            enabled: false
+          },
+          {
+            layer: trailsLayer,
+            enabled: false
+          },
+          {
+            layer: lodgingLayer,
+            enabled: false
+          },
+          {
+            layer: amenitiesLayer,
+            enabled: false
+          }],
             visibleElements: {
-              settingsMenu: false
+              settingsMenu: false,
+              createFeatures: false
             }
-            }); // End Editor constructor
-
-        // Create an Expand instance for the Editor and set the content
-        // property to the DOM node of the Editor widget
-        const editorExpand = new Expand({
-          view: view,
-          content: editor,
-          expanded: true
         });
 
-        // Add the expand instance to the ui
-        view.ui.add(editorExpand, "top-right");
+            
+  
+            // Create an Expand instance for the Editor and set the content
+            // property to the DOM node of the Editor widget
+            const editorExpand = new Expand({
+              view: view,
+              content: editor,
+              expanded: true
+            });
 
-        // adding a legend
-        let legend = new Legend({
-          view: view,
-          // styles the legend as a card
-          style: "card"
-        
-        });
-
-
-        // Create an Expand instance for the legend and set the content
-        // property to the DOM node of the legend widget
-        const legendExpand = new Expand({
-          view: view,
-          content: legend
-        });
-
-        // Add the expand instance to the ui
-        view.ui.add(legendExpand, "bottom-left");
-
-        // set an attribute filter on Cryptid Sightings layer view
-        function filterByCryptid(event) {
-          const selectedCryptid = event.target.getAttribute("CryptidName");
-            cryptidLayerView.filter = {
-              where: "CryptidName = '" + selectedCryptid + "'"
-            };
-        }
+            // Add the expand instance to the ui
+            view.ui.add(editorExpand, "top-right");
 
 
-        const cryptidsNodes = document.querySelectorAll(`.cryptid-item`);
-        const cryptidsElement = document.getElementById("cryptids-filter");
 
-        // click event handler for cryptids choices
-        cryptidsElement.addEventListener("click", filterByCryptid);
+            const customExpandBtn = document.createElement("div");
+            customExpandBtn.className = "custom-expand-btn";
+            customExpandBtn.innerHTML = `
+            <calcite-icon icon="layers" scale="s" style="color: #6A6A6A;"></calcite-icon>
+            `;
+            customExpandBtn.title = "Show Map Layers";
+            
+            const layerListContainer = document.createElement("div");
+            layerListContainer.className = "layer-list-wrapper";
 
-        // User clicked on cryptid name
-        // set an attribute filter on cryptid layer view
-        // to display the sightings of that cryptid
-        function filterByCryptid(event) {
-          const selectedCryptid = event.target.getAttribute("data-cryptid");
-          cryptidLayerView.filter = {
-            where: "CryptidName = '" + selectedCryptid + "'"
-          };
-        }
+            const header = document.createElement("div");
+            header.className = "layer-list-title";
+            header.innerText = "Map Layers";
 
-        view.whenLayerView(cryptidsLayer).then((layerView) => {
-          // get a reference to the cryptid sightings layerview
-          cryptidLayerView = layerView;
+            const subheader = document.createElement("div");
+            subheader.className = "layer-list-subtitle";
+            subheader.innerText = "Turn layers on and off";
 
-          // set up UI items
-          cryptidsElement.style.visibility = "visible";
-          const cryptidsExpand = new Expand({
+            const layerListDiv = document.createElement("div");
+            layerListContainer.appendChild(header);
+            layerListContainer.appendChild(subheader)
+            layerListContainer.appendChild(layerListDiv);
+
+            // Add the LayerList widget to that inner div
+            const layerList = new LayerList({
             view: view,
-            content: cryptidsElement,
-            expandIcon: "filter",
-            group: "top-left"
+            container: layerListDiv
+            });
+
+            let isVisible = false;
+            customExpandBtn.addEventListener("click", () => {
+              isVisible = !isVisible;
+              layerListContainer.style.display = isVisible ? "block" : "none";
+
+              // Swap icon inside the button
+              customExpandBtn.innerHTML = `
+                <calcite-icon icon="${isVisible ? 'chevrons-left' : 'layers'}" scale="s" style="color: #6A6A6A;"></calcite-icon>
+              `;
+            });
+
+            view.ui.add(customExpandBtn, "top-left");
+            view.ui.add(layerListContainer, "top-left");
+
+
+            
+            
+
+            // Create the main container
+            const birdToggleContainer = document.createElement("div");
+            birdToggleContainer.className = "custom-container";
+            birdToggleContainer.style.display = "flex";
+            birdToggleContainer.style.flexDirection = "column";
+            birdToggleContainer.style.alignItems = "center";
+            birdToggleContainer.style.marginTop = "2px";
+
+            // Create the label
+            const birdLabel = document.createElement("div");
+            birdLabel.textContent = "Bird Options";
+            birdLabel.style.fontSize = "12px";
+            birdLabel.style.fontWeight = "bold";
+            birdLabel.style.color = "#333";
+            birdLabel.style.marginBottom = "4px";
+
+            // Create a row for the toggle buttons
+            const birdButtonRow = document.createElement("div");
+            birdButtonRow.style.display = "flex";
+            birdButtonRow.style.flexDirection = "row";
+            birdButtonRow.style.gap = "8px";
+
+            // === Visibility Toggle ===
+            const birdVisibilityBtn = document.createElement("div");
+            birdVisibilityBtn.className = "custom-expand-btn-lg";
+            birdVisibilityBtn.style.textAlign = "center";
+            birdVisibilityBtn.style.cursor = "pointer";
+
+            let birdsVisible = true;
+            birdVisibilityBtn.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                <img src="https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=000000" width="16" height="16" alt="Toggle Bird Layer" />
+                <span style="font-size: 10px; color: #6A6A6A;">off</span>
+              </div>
+            `;
+            birdVisibilityBtn.title = "Toggle Bird Sightings";
+
+            birdVisibilityBtn.addEventListener("click", () => {
+            birdsVisible = !birdsVisible;
+            birdsLayer.visible = birdsVisible;
+
+            birdVisibilityBtn.innerHTML = birdsVisible
+              ? `
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <img src="https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=000000" width="16" height="16" alt="Bird Layer On" />
+                  <span style="font-size: 10px; color: #6A6A6A;">off</span>
+                </div>`
+              : `
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <img src="https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=6A6A6A" width="16" height="16" alt="Bird Layer Off" />
+                  <span style="font-size: 10px; color: #6A6A6A;">on</span>
+                </div>`;
+            });
+
+            // === Renderer Toggle ===
+            const rendererToggleBtn = document.createElement("div");
+            rendererToggleBtn.className = "custom-expand-btn-lg";
+            rendererToggleBtn.style.textAlign = "center";
+            rendererToggleBtn.style.cursor = "pointer";
+
+            let useHashedRenderer = false;
+            const defaultBirdRenderer = birdslayerRenderer;
+
+            rendererToggleBtn.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                <img src="images/rainbowbird.png" width="16" height="16" alt="Renderer Toggle" />
+                <span style="font-size: 10px; color: #6A6A6A;">Color</span>
+              </div>
+            `;
+            rendererToggleBtn.title = "Each kind it's own color!";
+
+            rendererToggleBtn.addEventListener("click", () => {
+            useHashedRenderer = !useHashedRenderer;
+
+            if (useHashedRenderer) {
+                birdsLayer.queryFeatures({
+                where: "1=1",
+                outFields: ["BIRD_NAME"],
+                returnGeometry: false,
+                returnDistinctValues: true,
+                orderByFields: ["BIRD_NAME"]
+                }).then((result) => {
+                const birdTypes = [...new Set(result.features.map(f => f.attributes.BIRD_NAME).filter(Boolean))];
+
+                const uniqueValueInfos = birdTypes.map(bird => {
+                    const color = hashStringToColor(bird);
+                    return {
+                    value: bird,
+                    label: bird,
+                    symbol: {
+                        type: "picture-marker",
+                        url: `https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=${color}`,
+                        width: "16px",
+                        height: "16px"
+                    }
+                    };
+                });
+
+                birdsLayer.renderer = {
+                    type: "unique-value",
+                    field: "BIRD_NAME",
+                    uniqueValueInfos: uniqueValueInfos
+                };
+
+                rendererToggleBtn.innerHTML = `
+                  <div style="display: flex; flex-direction: column; align-items: center;">
+                    <img src="https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=000000" width="16" height="16" alt="Renderer Toggle" />
+                    <span style="font-size: 10px; color: #6A6A6A;">Mono</span>
+                  </div>
+                `;
+                });
+            } else {
+                birdsLayer.renderer = defaultBirdRenderer;
+
+                rendererToggleBtn.innerHTML = `
+                  <div style="display: flex; flex-direction: column; align-items: center;">
+                    <img src="images/rainbowbird.png" width="16" height="16" alt="Renderer Toggle" />
+                    <span style="font-size: 10px; color: #6A6A6A;">Color</span>
+                  </div>
+                `;
+            }
+            });
+
+
+            
+
+            
+
+
+            // === Create a manual trigger button for the filter Expand ===
+            const birdsExpandBtn = document.createElement("div");
+            birdsExpandBtn.className = "custom-expand-btn-lg";
+            birdsExpandBtn.style.textAlign = "center";
+            birdsExpandBtn.style.cursor = "pointer";
+            birdsExpandBtn.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                <calcite-icon icon="filter" scale="s"></calcite-icon>
+                <span style="font-size: 10px; color: #6A6A6A;">Filter</span>
+              </div>
+            `;
+            birdsExpandBtn.title = "Filter Birds";
+
+            
+
+
+            const birdsElement = document.getElementById("birds-filter");
+            birdsElement.style.display = "none"; // start hidden
+
+            let birdsFilterVisible = false;
+
+            birdsExpandBtn.addEventListener("click", () => {
+            birdsFilterVisible = !birdsFilterVisible;
+            birdsElement.style.display = birdsFilterVisible ? "block" : "none";
+
+            // Swap icon and label
+            birdsExpandBtn.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                <calcite-icon icon="${birdsFilterVisible ? 'chevrons-up' : 'filter'}" scale="s"></calcite-icon>
+                <span style="font-size: 10px; color: #6A6A6A;">Filter</span>
+              </div>
+            `;
+
+            // Clear map filter when panel is closed
+            if (!birdsFilterVisible && editBirdLayer) {
+              editBirdLayer.filter = null;
+            }
           });
 
-          //clear the filters when user closes the expand widget
-          reactiveUtils.when(
-            () => !cryptidsExpand.expanded,
-            () => {
-              cryptidLayerView.filter = null;
+
+
+
+
+            // Put everything together
+            birdButtonRow.appendChild(birdVisibilityBtn);
+            birdButtonRow.appendChild(rendererToggleBtn);
+            birdButtonRow.appendChild(birdsExpandBtn);
+            birdToggleContainer.appendChild(birdLabel);
+            birdToggleContainer.appendChild(birdButtonRow);
+
+            view.ui.add(birdToggleContainer, {
+              position: "top-left",
+              index: 4
+            });
+
+
+
+            // set an attribute filter on Bird Sightings layer view
+            function filterByBird(event) {
+              const selectedBird = event.target.getAttribute("BIRD_NAME");
+                editBirdLayer.filter = {
+                  where: "BIRD_NAME = '" + selectedBird + "'"
+                };
             }
-          );
-          view.ui.add(cryptidsExpand, "top-left");
+
+
+            const birdNodes = document.querySelectorAll(`.bird-item`);
+
+            // click event handler for cryptids choices
+            birdsElement.addEventListener("click", filterByBird);
+
+            // User clicked on cryptid name
+            // set an attribute filter on cryptid layer view
+            // to display the sightings of that cryptid
+            function filterByBird(event) {
+              const selectedBird = event.target.getAttribute("data-bird");
+              editBirdLayer.filter = {
+                where: "BIRD_NAME = '" + selectedBird + "'"
+              };
+            }
+
+            view.whenLayerView(birdsLayer).then((layerView) => {
+              // get a reference to the cryptid sightings layerview
+              editBirdLayer = layerView;
+
+              // set up UI items
+              birdsElement.style.visibility = "visible";
+              
+            });
+
+
+            view.on("pointer-move", function (event) {
+                view.hitTest(event).then(function (response) {
+                    const results = response.results;
+
+                    const isHovering = results.some(result =>
+                    result.graphic?.layer === birdsLayer ||
+                    result.graphic?.layer === issuesLayer ||
+                    result.graphic?.layer === trailsLayer ||
+                    result.graphic?.layer === lodgingLayer
+                    );
+
+                    view.container.style.cursor = isHovering ? "pointer" : "default";
+                });
+            });
+
+
+            // adding a legend
+            let legend = new Legend({
+              view: view,
+              // styles the legend as a card
+              style: "card"
+            
+            });
+
+
+            // Create an Expand instance for the legend and set the content
+            // property to the DOM node of the legend widget
+            const legendExpand = new Expand({
+              view: view,
+              content: legend
+            });
+
+            // Add the expand instance to the ui
+            view.ui.add(legendExpand, "bottom-left");
+
+
+            var coordsWidget = document.createElement("div");
+            coordsWidget.id = "coordsWidget";
+            coordsWidget.className = "esri-widget esri-component";
+            coordsWidget.style.padding = "7px 15px 5px";
+
+            view.ui.add(coordsWidget, "bottom-right");
+
+
+            function showCoordinates(pt) {
+              var coords =
+                "Lat/Lon " +
+                pt.latitude.toFixed(3) +
+                " " +
+                pt.longitude.toFixed(3) +
+                " | Scale 1:" +
+                Math.round(view.scale * 1) / 1 +
+                " | Zoom " +
+                view.zoom;
+              coordsWidget.innerHTML = coords;
+            }
+
+            view.watch("stationary", function (isStationary) {
+              showCoordinates(view.center);
+            });
+
+            view.on("pointer-move", function (evt) {
+              showCoordinates(view.toMap({ x: evt.x, y: evt.y }));
+            });
+
+
+          });
         });
-
-      });
-
      </script>
-
-    <!-- CSS to make a full-screen map -->
-    <style>
+     <!-- CSS to make a full-screen map -->
+     <!-- <style>
       html,
       body,
       #viewDiv {
         padding: 0;
         margin: 0;
-        height: 100%;
+        height: 95%;
         width: 100%;
-      }
-
-      #cryptids-filter {
-        max-height: 540px;
-        overflow-y: auto;
-        width: 100%;
-        visibility: hidden;
-      }
-
-      .cryptid-item {
-        width: 100%;
-        padding: 12px;
-        text-align: center;
-        vertical-align: baseline;
-        cursor: pointer;
-        height: 40px;
-      }
-
-      .cryptid-item:focus {
-        background-color: dimgrey;
-      }
-
-      .cryptid-item:hover {
-        background-color: dimgrey;
-      }
-
-    </style> 
-  </head>
-  <body>
+      } 
+     </style> -->
+    </link>
+   </link>
+  </meta>
+ </head>
+ <body>
 
     <!-- creates the filter list -->
-    <div id="cryptids-filter" class="esri-widget">
-      <div class="cryptid-item visible-cryptid" data-cryptid="Aberdeen Wildman">Aberdeen Wildman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Abominable Swamp Slob">Abominable Swamp Slob</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Abyssal Rainbow Gar">Abyssal Rainbow Gar</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Alaskan Giant Polar Bear">Alaskan Giant Polar Bear</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Albatwitch">Albatwitch</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Alien Bigfoot">Alien Bigfoot</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Alien Spores">Alien Spores</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Alkali Lake Monster">Alkali Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Allegewi">Allegewi</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Altamaha-ha">Altamaha-ha</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="American Hyena">American Hyena</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="American Lion">American Lion</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Appalachian Chupacabra">Appalachian Chupacabra</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Argopelter">Argopelter</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Arizona Jaguar">Arizona Jaguar</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Arkansas Gowrow">Arkansas Gowrow</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Arkansas Snipe">Arkansas Snipe</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ashuaps">Ashuaps</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ausso One">Ausso One</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Averasboro Gallinipper">Averasboro Gallinipper</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Avian">Avian</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Axehandle Hound">Axehandle Hound</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ball-Tailed Cat">Ball-Tailed Cat</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Baraboo Platypus">Baraboo Platypus</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Barnacle Tree">Barnacle Tree</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Basilosaurus">Basilosaurus</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Bassigator">Bassigator</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Batsquatch">Batsquatch</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Beaman">Beaman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Bear Dogs">Bear Dogs</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Bear King of Marble Falls">Bear King of Marble Falls</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Bear Lake Monster">Bear Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Beast of Bears">Beast of Bears</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Beast of Busco">Beast of Busco</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Beast of Gumhill">Beast of Gumhill</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Beast of the Land Between the Lakes">Beast of the Land Between the Lakes</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Beasts of Sherman">Beasts of Sherman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Beaver Run Snow Gator">Beaver Run Snow Gator</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Bermuda Beast">Bermuda Beast</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Bermuda Blob">Bermuda Blob</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Bessie">Bessie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Big Bird">Big Bird</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Bigfoot">Bigfoot</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Billdad">Billdad</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Black Eyed Children">Black Eyed Children</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Blue Headed Black Bear">Blue Headed Black Bear</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Boat hound">Boat hound</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Bobo">Bobo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Bogeyman">Bogeyman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Boggy Creek Monster">Boggy Creek Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Boqs">Boqs</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Boston Bahumagosh">Boston Bahumagosh</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Boston Lemur">Boston Lemur</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="British Columbia's Giant Raven">British Columbia's Giant Raven</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Bunnyman">Bunnyman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Butler Gargoyle">Butler Gargoyle</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Butterfly People">Butterfly People</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Cactus Cat">Cactus Cat</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Cadborosaurus">Cadborosaurus</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Cameron Lake Monster">Cameron Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Canadian and Cuban Albino Shark">Canadian and Cuban Albino Shark</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Canadian Chupacabra">Canadian Chupacabra</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Cape Sable Serpent">Cape Sable Serpent</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Carmel Area Creature">Carmel Area Creature</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Cassie">Cassie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Celofay">Celofay</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Central American Whintosser">Central American Whintosser</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Champ">Champ</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Charles Mill Lake Monster">Charles Mill Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Chessie">Chessie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Chiye-Tanka">Chiye-Tanka</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Chupacabra">Chupacabra</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Cole Hollow Road Monster">Cole Hollow Road Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Colossal Claude">Colossal Claude</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Columbia River Sand Squink">Columbia River Sand Squink</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Come-at-a-Body">Come-at-a-Body</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Cooncat">Cooncat</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Coonigator">Coonigator</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Cosmic Tree">Cosmic Tree</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Crawfordsville Monster">Crawfordsville Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Crazy Critter of Bald Mountain">Crazy Critter of Bald Mountain</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Creatures of the Deep Sea">Creatures of the Deep Sea</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Cressie">Cressie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Crocodingo">Crocodingo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Crocotta">Crocotta</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Cuba">Cuba</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Cumberland Dragon">Cumberland Dragon</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dayton Area Phantom Panthers">Dayton Area Phantom Panthers</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Deer Man">Deer Man</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Deer Women">Deer Women</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Deridder Roadkill">Deridder Roadkill</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Devil monkey">Devil monkey</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Devil Monkeys">Devil Monkeys</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Devil's Lake Monster">Devil's Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dewayo">Dewayo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dingbat">Dingbat</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dingbelle">Dingbelle</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dingmaul">Dingmaul</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Diplocaulus">Diplocaulus</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dire Wolf">Dire Wolf</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Doc Benton">Doc Benton</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dogigator">Dogigator</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Domenech's Pseudo-goat">Domenech's Pseudo-goat</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Donkey Lady of San Antonio">Donkey Lady of San Antonio</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Doppelgänger">Doppelgänger</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dover Demon">Dover Demon</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dragon">Dragon</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dublin Lake Monster">Dublin Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Duck-Footed Dum-Dum">Duck-Footed Dum-Dum</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dundas Island Blackfly">Dundas Island Blackfly</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Dungavenhooter">Dungavenhooter</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Eastern Cougar">Eastern Cougar</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="El Yunque Chupacabra">El Yunque Chupacabra</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Elmendorf Beast">Elmendorf Beast</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Enfield Horror">Enfield Horror</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Fifolet">Fifolet</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Fiji Mermaid">Fiji Mermaid</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Flathead Lake Monster">Flathead Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Flatwoods Monster">Flatwoods Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Floridian Marine Reptiles">Floridian Marine Reptiles</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Flying Head">Flying Head</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Flying Rays">Flying Rays</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Folly Beach Monster">Folly Beach Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Frank Shaw's Gargoyle">Frank Shaw's Gargoyle</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Freshwater Monkey">Freshwater Monkey</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Fresno Nightcrawler">Fresno Nightcrawler</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Fsti Capcaki">Fsti Capcaki</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Funeral Mountain Terrashot">Funeral Mountain Terrashot</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Fur-Bearing Trout">Fur-Bearing Trout</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Garson Invaders">Garson Invaders</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Gator Man">Gator Man</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Gee-Gee Bird">Gee-Gee Bird</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Genoskwa">Genoskwa</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Gensou Hyouhon Hakubutsukan">Gensou Hyouhon Hakubutsukan</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Georgia Raptor">Georgia Raptor</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ghost Camel">Ghost Camel</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ghost Deer">Ghost Deer</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ghoul">Ghoul</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Giant Catfish">Giant Catfish</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Giant Grasshoppers">Giant Grasshoppers</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Giant Rat">Giant Rat</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Giant Space Brains of Palos Verdes">Giant Space Brains of Palos Verdes</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Giddy fish">Giddy fish</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Gigantopithecus">Gigantopithecus</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Glacier Island Carcass">Glacier Island Carcass</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Glawackus">Glawackus</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Gloucester Sea Serpent">Gloucester Sea Serpent</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Glyptodon">Glyptodon</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Goatman">Goatman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Godaphro">Godaphro</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Goofang">Goofang</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Grafton Monster">Grafton Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Grassman">Grassman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Great Auk">Great Auk</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Griggstown Cow">Griggstown Cow</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Grunch Road Monster">Grunch Road Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Guam Marine Salamander">Guam Marine Salamander</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Gugwe">Gugwe</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Gumberoo">Gumberoo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Guyascutus">Guyascutus</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hamlet">Hamlet</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hangdown">Hangdown</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hat Man">Hat Man</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hawaiian Monk Seal">Hawaiian Monk Seal</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hellhounds">Hellhounds</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Henderson Island Monster">Henderson Island Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hidebehind">Hidebehind</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="High-Finned Sperm Whale">High-Finned Sperm Whale</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hodag">Hodag</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hogzilla">Hogzilla</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Honey Island Swamp Monster">Honey Island Swamp Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hoop Snake">Hoop Snake</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hopkinsville Goblins">Hopkinsville Goblins</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hudson River Monster">Hudson River Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hugag">Hugag</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Humility">Humility</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hvcko Capko">Hvcko Capko</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hyampom Hog Bear">Hyampom Hog Bear</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Hydrarchos">Hydrarchos</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Igopogo">Igopogo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Iliamna Lake Monster">Iliamna Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Indrid Cold">Indrid Cold</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Iowa Dragons">Iowa Dragons</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Jackalope">Jackalope</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Jacko">Jacko</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Jake the Alligator Man">Jake the Alligator Man</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Jersey Devil">Jersey Devil</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Jumpin' Yuccy">Jumpin' Yuccy</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Kanas Lake Monster">Kanas Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Kansas City Winged Demon">Kansas City Winged Demon</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Kiidk'yaas">Kiidk'yaas</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Kinderhook Blob">Kinderhook Blob</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Kingstie">Kingstie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Kinosoo">Kinosoo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Klicktitat Ape Cat">Klicktitat Ape Cat</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Koguhpuk">Koguhpuk</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Kraken">Kraken</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Kushtaka">Kushtaka</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lac Wood Screecher">Lac Wood Screecher</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lake Elsinore Monster">Lake Elsinore Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lake Erie Chomper">Lake Erie Chomper</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lake George Monster">Lake George Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lake Herrington Monster">Lake Herrington Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lake Monsters">Lake Monsters</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lake Ontario Serpents">Lake Ontario Serpents</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lake St. Clair Serpent">Lake St. Clair Serpent</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lake Tahoe Monster">Lake Tahoe Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lake Tarpon Monster">Lake Tarpon Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lake Worth Monster">Lake Worth Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lechuza">Lechuza</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Leprocaun">Leprocaun</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lizard Man of Scape Ore Swamp">Lizard Man of Scape Ore Swamp</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lizard Men">Lizard Men</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lockridge Monster">Lockridge Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Log Gar">Log Gar</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lone Pine Mountain Devil">Lone Pine Mountain Devil</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Loveland Frogmen">Loveland Frogmen</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Luferlang">Luferlang</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Lusca">Lusca</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="MacFarlane's Bear">MacFarlane's Bear</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Maned American Lion">Maned American Lion</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Manhattan Monster">Manhattan Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Manipogo">Manipogo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Manitou">Manitou</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Mann Hill Island Carcass">Mann Hill Island Carcass</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Mannegishi">Mannegishi</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Mantis Man">Mantis Man</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Marked Hominids">Marked Hominids</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Marquette Monster">Marquette Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Maryland Goatman">Maryland Goatman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Matah Kagmi">Matah Kagmi</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Matlox">Matlox</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Maumee River Monster">Maumee River Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Medford Shmoos">Medford Shmoos</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Melon Heads">Melon Heads</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Memphré">Memphré</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Men in Black">Men in Black</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Menehune">Menehune</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Messie">Messie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Metal Man">Metal Man</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Metro Monster">Metro Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Miami Beach Scorpion">Miami Beach Scorpion</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Michelin Men">Michelin Men</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Michigan Dogman">Michigan Dogman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Mike The Headless Chicken">Mike The Headless Chicken</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Milamo">Milamo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Minashunka">Minashunka</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Miniwashitu">Miniwashitu</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Minnesota Dog-Man">Minnesota Dog-Man</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Minnesota Iceman">Minnesota Iceman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Missouri's Giant Spider">Missouri's Giant Spider</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Mogollon Monster">Mogollon Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Momo">Momo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Monongy">Monongy</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Montauk Monster">Montauk Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Moon Eyed People of North Carolina">Moon Eyed People of North Carolina</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Moore's Beach Monster">Moore's Beach Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Moose Monster">Moose Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Moss Man">Moss Man</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Mothman">Mothman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Mud Mermaids">Mud Mermaids</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Mummy">Mummy</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Murphysboro Mud Monster">Murphysboro Mud Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Mussie">Mussie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Nain Rouge">Nain Rouge</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Nantucket Blob">Nantucket Blob</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Napa Rebobs">Napa Rebobs</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Nape">Nape</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="NASA's Jellyfish Anomalies">NASA's Jellyfish Anomalies</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="New Louisiana Swamp Monster">New Louisiana Swamp Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="New River Inlet Carcass">New River Inlet Carcass</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="North Shore Monster">North Shore Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Northeast Region of North America">Northeast Region of North America</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Northern Giant">Northern Giant</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Northern Spoonbill">Northern Spoonbill</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Northwest Region">Northwest Region</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Not Deer">Not Deer</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Nuk-luk">Nuk-luk</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Obojoki">Obojoki</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Oggie">Oggie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ogopogo">Ogopogo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ogua">Ogua</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Oil Pit Squid">Oil Pit Squid</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Oklahoma Octopus">Oklahoma Octopus</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ol' Slavey">Ol' Slavey</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Old Green Eyes">Old Green Eyes</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Old Saybrook Blockheads">Old Saybrook Blockheads</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Old Spider Legs">Old Spider Legs</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Old Yellow Top">Old Yellow Top</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="On the Map">On the Map</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Oomph">Oomph</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Opium-Pipe Fish">Opium-Pipe Fish</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Oracular Trees">Oracular Trees</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Orange Alligator">Orange Alligator</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Orange Eyes">Orange Eyes</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Owner of a Bag">Owner of a Bag</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ozark Blue Man">Ozark Blue Man</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ozark Howler">Ozark Howler</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Paddler">Paddler</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Pal Rai Yuk">Pal Rai Yuk</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Pale Crawlers">Pale Crawlers</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Papa Bois">Papa Bois</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Partridge Creek Monster">Partridge Creek Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Pascagoula Elephant Men">Pascagoula Elephant Men</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Patterson–Gimlin Footage">Patterson–Gimlin Footage</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Peat Ape">Peat Ape</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Pennsylvanian White Bigfoot">Pennsylvanian White Bigfoot</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Pepie Monster">Pepie Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Pérák">Pérák</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Phantom Kangaroo">Phantom Kangaroo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Philamaloo Bird">Philamaloo Bird</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Piasa Bird">Piasa Bird</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Pope Lick Monster">Pope Lick Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Porpoise People">Porpoise People</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Pressie">Pressie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Proctor Valley Monster">Proctor Valley Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Puerto Rican Chupacabra">Puerto Rican Chupacabra</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Pukwudgie">Pukwudgie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Qallupilluit">Qallupilluit</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Qaxdascidi">Qaxdascidi</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Quetzalcoatlus">Quetzalcoatlus</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Qupqugiaq">Qupqugiaq</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Randolph County Cistern Creeper">Randolph County Cistern Creeper</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Raven Mocker">Raven Mocker</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Raystown Ray">Raystown Ray</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Rhinoceros Dolphin">Rhinoceros Dolphin</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="River Dinos">River Dinos</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Riverside Monster">Riverside Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Rochester Rat-Dog">Rochester Rat-Dog</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Roperite">Roperite</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Rougarou">Rougarou</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Rubberado">Rubberado</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ruby Valley Beasts">Ruby Valley Beasts</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Rumptifusel">Rumptifusel</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sabine Thing">Sabine Thing</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sadie">Sadie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Salamander">Salamander</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sam Harris">Sam Harris</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="San Pedro Mountains mummy">San Pedro Mountains mummy</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sand dragon">Sand dragon</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Santa Monica Giant Squid">Santa Monica Giant Squid</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Santer">Santer</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sasquatch">Sasquatch</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Seal Rock Sea Monster">Seal Rock Sea Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Seatco">Seatco</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sewer Alligator">Sewer Alligator</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Shadow People">Shadow People</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sharlie">Sharlie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sheepsquatch">Sheepsquatch</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sherman Beasts">Sherman Beasts</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Shunka Warakin">Shunka Warakin</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Si-Teh-Cas">Si-Teh-Cas</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Silver Lake Serpent">Silver Lake Serpent</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sisiutl">Sisiutl</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Skin fin">Skin fin</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Skin-walker">Skin-walker</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Skookum">Skookum</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Skunk Ape">Skunk Ape</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sky Serpents">Sky Serpents</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Slide-Rock Bolter">Slide-Rock Bolter</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Sliver Cat">Sliver Cat</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Smilodon">Smilodon</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Smithy">Smithy</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Snake-Headed Dog">Snake-Headed Dog</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Snallygaster">Snallygaster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Snawfus">Snawfus</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Snoligoster">Snoligoster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Snow Snake">Snow Snake</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Snow Wasset">Snow Wasset</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="South Carolina Thunderbird">South Carolina Thunderbird</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Space Brains of Palos Verdes">Space Brains of Palos Verdes</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Specter Moose">Specter Moose</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Splinter Cat">Splinter Cat</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Spottsville Monster">Spottsville Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Spring-Heeled Jack">Spring-Heeled Jack</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Squasholiger">Squasholiger</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Squidgicum-Squee">Squidgicum-Squee</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Squonk">Squonk</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="St. Augustine Monster">St. Augustine Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Steller's Sea Ape">Steller's Sea Ape</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Steller's sea cow">Steller's sea cow</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Swamp Auger">Swamp Auger</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Tahoe Tessie">Tahoe Tessie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Tailypo">Tailypo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Tammatuyuq">Tammatuyuq</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Teakettler">Teakettler</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Tennessee Red Cheetah">Tennessee Red Cheetah</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Tennessee Wildman">Tennessee Wildman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Terror Birds">Terror Birds</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Beast of Bray Road">The Beast of Bray Road</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Black Fox of Salmon River">The Black Fox of Salmon River</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Buru, Giant Lizards and Giant Crocodiles">The Buru, Giant Lizards and Giant Crocodiles</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Bush Man">The Bush Man</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Cameron Village Sewer Blob">The Cameron Village Sewer Blob</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Dark Watchers">The Dark Watchers</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Haddock Goblin">The Haddock Goblin</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Legend of Sinkhole Sam">The Legend of Sinkhole Sam</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Red Ghost">The Red Ghost</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Tumor Seal of Mel’s Other Hole">The Tumor Seal of Mel’s Other Hole</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Turner Beast (Mutant Canine)">The Turner Beast (Mutant Canine)</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The Werewolf of Werewolf Springs">The Werewolf of Werewolf Springs</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="The White Bluff Screamer">The White Bluff Screamer</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Thetis Lake Monster">Thetis Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Thunderbird">Thunderbird</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Timberdoodle">Timberdoodle</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Todd Standing Bigfoot footage">Todd Standing Bigfoot footage</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Toronto Aerial Jellyfish">Toronto Aerial Jellyfish</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Toronto Tunnel Monster">Toronto Tunnel Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Toteroad Shagamaw">Toteroad Shagamaw</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Trinity Alps Giant Salamander">Trinity Alps Giant Salamander</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Tripodero">Tripodero</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="True Giants">True Giants</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Tsul 'Kalu">Tsul 'Kalu</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Turtle Lake Monster">Turtle Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Tuscumbia Space Penguins">Tuscumbia Space Penguins</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Two-toed Tom">Two-toed Tom</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="UFO">UFO</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ugjuknarpak">Ugjuknarpak</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ugly Merman">Ugly Merman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Undead">Undead</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Underwater Panther">Underwater Panther</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Unicorn">Unicorn</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Unknown Fish">Unknown Fish</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Up-island Spider">Up-island Spider</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Upland trout">Upland trout</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Urayuli">Urayuli</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Vampire">Vampire</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Vampire Beast">Vampire Beast</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Van Meter Visitor">Van Meter Visitor</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Waheela">Waheela</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Walker County Creature">Walker County Creature</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Wallowa Lake Freshwater Crustaceans">Wallowa Lake Freshwater Crustaceans</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Wallowa Lake Monster">Wallowa Lake Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Wamp">Wamp</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Wampus Cat">Wampus Cat</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Wanderlight">Wanderlight</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Wapaloosie">Wapaloosie</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Washington's Eagle">Washington's Eagle</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Waterford Sheepman">Waterford Sheepman</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Wendigo">Wendigo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Werewolf">Werewolf</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="West Virginian Yahoo">West Virginian Yahoo</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Whiffenpoof">Whiffenpoof</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Whirligig fish">Whirligig fish</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Whirling Whimpus">Whirling Whimpus</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="White Death">White Death</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="White Oak's Skunk Ape">White Oak's Skunk Ape</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="White River Monster">White River Monster</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="White screamer">White screamer</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="White Things (Devil Dogs)">White Things (Devil Dogs)</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Wood Booger">Wood Booger</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Woods Devil">Woods Devil</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Woolly Mammoth">Woolly Mammoth</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Wunk">Wunk</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Wyvern">Wyvern</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Yukon Beaver Eater">Yukon Beaver Eater</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Yukontherium">Yukontherium</div>
-      <div class="cryptid-item visible-cryptid" data-cryptid="Ziphius (Cuvier's Beaked Whale)">Ziphius (Cuvier's Beaked Whale)</div>
-    </div>
-
-    <!-- creates pop-up instructions -->
-    
-    <!-- The div to display the map -->
-    <div id="viewDiv">
-       <div class="popup">
-        <button id="close">&times;</button>
-        <h1>Cryptids of the United States</h1>
-        <h2>A tool for gathering sightings of mysterious creatures</h2>
-        <p>A "cryptid" is defined as "an animal (such as Sasquatch or the Loch Ness Monster) that has been claimed to exist but never proven to exist." With this app, you'll be able to share information about any cryptid sightings you may have had. You can even record information while you're looking at it! Because cryptids are sometimes hard to see, start with the basic body shape and go from there.</p>
-        <p>The right side of the app is where you can enter location information and--most importantly--add info about your sighting. The left helps you modify the map, filter the cryptids, and view the map legend.</p>
-        <p>
-           <div class="navigationarea"> 
-            <table id="navigation">
-                <tr>
-                    <td colspan="5"><p><strong>Navigation symbols on the map:</strong></p></td>
-                </tr>
-                <tr>
-                  <td><img src="images/icon-zoom.gif"></td>
-                  <td>Zoom in and out of the map</td>
-                  <td width="10%"></td>
-                  <td><img src="images/icon-search.gif"></td>
-                  <td>Toggle the address bar to type in a specific<br />address or location</td>
-                </tr>
-                <tr>
-                  <td><img src="images/icon-basemap.gif"></td>
-                  <td>Change the basemap layer</td>
-                  <td></td>
-                  <td><img src="images/icon-locate.gif"></td>
-                  <td>Center the map on your current location</td>
-                </tr>
-                <tr>
-                  <td><img src="images/icon-filter.gif"></td>
-                  <td>Toggle to filter by cryptid name</td>
-                  <td></td>
-                  <td><img src="images/icon-editor.gif"></td>
-                  <td>Toggle the editor window to add/edit data</td>
-                </tr>
-                <tr>
-                  <td><img src="images/icon-legend.gif"></td>
-                  <td>Open and close the map legend</td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                </tr>
-              </table> 
-            </div>
-  
-        </p>
-        <p>
-            Created by Eric Johnson for University of Wisconsin-Madison Geography 576 - Fall 2024
-        </p>
-        <p>
-            Much of the cryptid info came from: <a href="https://cryptidz.fandom.com/wiki/Cryptid_Wiki" target="_blank"><strong>Cryptid Wiki</strong></a>
-        </p>
-        <button id="letsGo">
-            <e href="#">Go!</e>
-        </button>
+    <div id="birds-filter" class="esri-widget bird-filter-panel">
+        <div class="bird-item visible-bird" data-bird="Acadian Flycatcher (Empidonax virescens)">Acadian Flycatcher (Empidonax virescens)</div>
+        <div class="bird-item visible-bird" data-bird="American Crow (Corvus brachyrhynchos)">American Crow (Corvus brachyrhynchos)</div>
+        <div class="bird-item visible-bird" data-bird="American Goldfinch (Spinus tristis)">American Goldfinch (Spinus tristis)</div>
+        <div class="bird-item visible-bird" data-bird="American Kestrel (Falco sparverius)">American Kestrel (Falco sparverius)</div>
+        <div class="bird-item visible-bird" data-bird="American Redstart (Setophaga ruticilla)">American Redstart (Setophaga ruticilla)</div>
+        <div class="bird-item visible-bird" data-bird="American Robin (Turdus migratorius)">American Robin (Turdus migratorius)</div>
+        <div class="bird-item visible-bird" data-bird="Bald Eagle (Haliaeetus leucocephalus)">Bald Eagle (Haliaeetus leucocephalus)</div>
+        <div class="bird-item visible-bird" data-bird="Barred Owl (Strix varia)">Barred Owl (Strix varia)</div>
+        <div class="bird-item visible-bird" data-bird="Belted Kingfisher (Megaceryle alcyon)">Belted Kingfisher (Megaceryle alcyon)</div>
+        <div class="bird-item visible-bird" data-bird="Black Vulture (Coragyps atratus)">Black Vulture (Coragyps atratus)</div>
+        <div class="bird-item visible-bird" data-bird="Black-and-white Warbler (Mniotilta varia)">Black-and-white Warbler (Mniotilta varia)</div>
+        <div class="bird-item visible-bird" data-bird="Blackpoll Warbler (Setophaga striata)">Blackpoll Warbler (Setophaga striata)</div>
+        <div class="bird-item visible-bird" data-bird="Blue Grosbeak (Passerina caerulea)">Blue Grosbeak (Passerina caerulea)</div>
+        <div class="bird-item visible-bird" data-bird="Blue Jay (Cyanocitta cristata)">Blue Jay (Cyanocitta cristata)</div>
+        <div class="bird-item visible-bird" data-bird="Blue-gray Gnatcatcher (Polioptila caerulea)">Blue-gray Gnatcatcher (Polioptila caerulea)</div>
+        <div class="bird-item visible-bird" data-bird="Broad-winged Hawk (Buteo platypterus)">Broad-winged Hawk (Buteo platypterus)</div>
+        <div class="bird-item visible-bird" data-bird="Brown Creeper (Certhia americana)">Brown Creeper (Certhia americana)</div>
+        <div class="bird-item visible-bird" data-bird="Brown-headed Cowbird (Molothrus ater)">Brown-headed Cowbird (Molothrus ater)</div>
+        <div class="bird-item visible-bird" data-bird="Canada Goose (Branta canadensis)">Canada Goose (Branta canadensis)</div>
+        <div class="bird-item visible-bird" data-bird="Carolina Chickadee (Poecile carolinensis)">Carolina Chickadee (Poecile carolinensis)</div>
+        <div class="bird-item visible-bird" data-bird="Carolina Wren (Thryothorus ludovicianus)">Carolina Wren (Thryothorus ludovicianus)</div>
+        <div class="bird-item visible-bird" data-bird="Cedar Waxwing (Bombycilla cedrorum)">Cedar Waxwing (Bombycilla cedrorum)</div>
+        <div class="bird-item visible-bird" data-bird="Chimney Swift (Chaetura pelagica)">Chimney Swift (Chaetura pelagica)</div>
+        <div class="bird-item visible-bird" data-bird="Chipping Sparrow (Spizella passerina)">Chipping Sparrow (Spizella passerina)</div>
+        <div class="bird-item visible-bird" data-bird="Common Grackle (Quiscalus quiscula)">Common Grackle (Quiscalus quiscula)</div>
+        <div class="bird-item visible-bird" data-bird="Common Yellowthroat (Geothlypis trichas)">Common Yellowthroat (Geothlypis trichas)</div>
+        <div class="bird-item visible-bird" data-bird="Dark-eyed Junco (Junco hyemalis)">Dark-eyed Junco (Junco hyemalis)</div>
+        <div class="bird-item visible-bird" data-bird="Double-crested Cormorant (Nannopterum auritum)">Double-crested Cormorant (Nannopterum auritum)</div>
+        <div class="bird-item visible-bird" data-bird="Downy Woodpecker (Dryobates pubescens)">Downy Woodpecker (Dryobates pubescens)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Bluebird (Sialia sialis)">Eastern Bluebird (Sialia sialis)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Kingbird (Tyrannus tyrannus)">Eastern Kingbird (Tyrannus tyrannus)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Meadowlark (Sturnella magna)">Eastern Meadowlark (Sturnella magna)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Phoebe (Sayornis phoebe)">Eastern Phoebe (Sayornis phoebe)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Towhee (Pipilo erythrophthalmus)">Eastern Towhee (Pipilo erythrophthalmus)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Wood-Pewee (Contopus virens)">Eastern Wood-Pewee (Contopus virens)</div>
+        <div class="bird-item visible-bird" data-bird="European Starling (Sturnus vulgaris)">European Starling (Sturnus vulgaris)</div>
+        <div class="bird-item visible-bird" data-bird="Fish Crow (Corvus ossifragus)">Fish Crow (Corvus ossifragus)</div>
+        <div class="bird-item visible-bird" data-bird="Golden-crowned Kinglet (Regulus satrapa)">Golden-crowned Kinglet (Regulus satrapa)</div>
+        <div class="bird-item visible-bird" data-bird="Gray Catbird (Dumetella carolinensis)">Gray Catbird (Dumetella carolinensis)</div>
+        <div class="bird-item visible-bird" data-bird="Great Crested Flycatcher (Myiarchus crinitus)">Great Crested Flycatcher (Myiarchus crinitus)</div>
+        <div class="bird-item visible-bird" data-bird="Hairy Woodpecker (Dryobates villosus)">Hairy Woodpecker (Dryobates villosus)</div>
+        <div class="bird-item visible-bird" data-bird="Hermit Thrush (Catharus guttatus)">Hermit Thrush (Catharus guttatus)</div>
+        <div class="bird-item visible-bird" data-bird="Hooded Warbler (Setophaga citrina)">Hooded Warbler (Setophaga citrina)</div>
+        <div class="bird-item visible-bird" data-bird="House Finch (Haemorhous mexicanus)">House Finch (Haemorhous mexicanus)</div>
+        <div class="bird-item visible-bird" data-bird="Indigo Bunting (Passerina cyanea)">Indigo Bunting (Passerina cyanea)</div>
+        <div class="bird-item visible-bird" data-bird="Kentucky Warbler (Geothlypis formosa)">Kentucky Warbler (Geothlypis formosa)</div>
+        <div class="bird-item visible-bird" data-bird="Killdeer (Charadrius vociferus)">Killdeer (Charadrius vociferus)</div>
+        <div class="bird-item visible-bird" data-bird="Louisiana Waterthrush (Parkesia motacilla)">Louisiana Waterthrush (Parkesia motacilla)</div>
+        <div class="bird-item visible-bird" data-bird="Mallard (Anas platyrhynchos)">Mallard (Anas platyrhynchos)</div>
+        <div class="bird-item visible-bird" data-bird="Mourning Dove (Zenaida macroura)">Mourning Dove (Zenaida macroura)</div>
+        <div class="bird-item visible-bird" data-bird="new world warbler sp. (Parulidae sp.)">new world warbler sp. (Parulidae sp.)</div>
+        <div class="bird-item visible-bird" data-bird="Northern Cardinal (Cardinalis cardinalis)">Northern Cardinal (Cardinalis cardinalis)</div>
+        <div class="bird-item visible-bird" data-bird="Northern Flicker (Colaptes auratus)">Northern Flicker (Colaptes auratus)</div>
+        <div class="bird-item visible-bird" data-bird="Northern Mockingbird (Mimus polyglottos)">Northern Mockingbird (Mimus polyglottos)</div>
+        <div class="bird-item visible-bird" data-bird="Northern Parula (Setophaga americana)">Northern Parula (Setophaga americana)</div>
+        <div class="bird-item visible-bird" data-bird="Northern Rough-winged Swallow (Stelgidopteryx serripennis)">Northern Rough-winged Swallow (Stelgidopteryx serripennis)</div>
+        <div class="bird-item visible-bird" data-bird="Orchard Oriole (Icterus spurius)">Orchard Oriole (Icterus spurius)</div>
+        <div class="bird-item visible-bird" data-bird="Osprey (Pandion haliaetus)">Osprey (Pandion haliaetus)</div>
+        <div class="bird-item visible-bird" data-bird="Ovenbird (Seiurus aurocapilla)">Ovenbird (Seiurus aurocapilla)</div>
+        <div class="bird-item visible-bird" data-bird="Pileated Woodpecker (Dryocopus pileatus)">Pileated Woodpecker (Dryocopus pileatus)</div>
+        <div class="bird-item visible-bird" data-bird="Pine Warbler (Setophaga pinus)">Pine Warbler (Setophaga pinus)</div>
+        <div class="bird-item visible-bird" data-bird="Prothonotary Warbler (Protonotaria citrea)">Prothonotary Warbler (Protonotaria citrea)</div>
+        <div class="bird-item visible-bird" data-bird="Red-bellied Woodpecker (Melanerpes carolinus)">Red-bellied Woodpecker (Melanerpes carolinus)</div>
+        <div class="bird-item visible-bird" data-bird="Red-breasted Nuthatch (Sitta canadensis)">Red-breasted Nuthatch (Sitta canadensis)</div>
+        <div class="bird-item visible-bird" data-bird="Red-eyed Vireo (Vireo olivaceus)">Red-eyed Vireo (Vireo olivaceus)</div>
+        <div class="bird-item visible-bird" data-bird="Red-headed Woodpecker (Melanerpes erythrocephalus)">Red-headed Woodpecker (Melanerpes erythrocephalus)</div>
+        <div class="bird-item visible-bird" data-bird="Red-shouldered Hawk (Buteo lineatus)">Red-shouldered Hawk (Buteo lineatus)</div>
+        <div class="bird-item visible-bird" data-bird="Red-tailed Hawk (Buteo jamaicensis)">Red-tailed Hawk (Buteo jamaicensis)</div>
+        <div class="bird-item visible-bird" data-bird="Red-winged Blackbird (Agelaius phoeniceus)">Red-winged Blackbird (Agelaius phoeniceus)</div>
+        <div class="bird-item visible-bird" data-bird="Ring-necked Duck (Aythya collaris)">Ring-necked Duck (Aythya collaris)</div>
+        <div class="bird-item visible-bird" data-bird="Rose-breasted Grosbeak (Pheucticus ludovicianus)">Rose-breasted Grosbeak (Pheucticus ludovicianus)</div>
+        <div class="bird-item visible-bird" data-bird="Ruby-crowned Kinglet (Corthylio calendula)">Ruby-crowned Kinglet (Corthylio calendula)</div>
+        <div class="bird-item visible-bird" data-bird="Ruby-throated Hummingbird (Archilochus colubris)">Ruby-throated Hummingbird (Archilochus colubris)</div>
+        <div class="bird-item visible-bird" data-bird="Scarlet Tanager (Piranga olivacea)">Scarlet Tanager (Piranga olivacea)</div>
+        <div class="bird-item visible-bird" data-bird="Song Sparrow (Melospiza melodia)">Song Sparrow (Melospiza melodia)</div>
+        <div class="bird-item visible-bird" data-bird="Summer Tanager (Piranga rubra)">Summer Tanager (Piranga rubra)</div>
+        <div class="bird-item visible-bird" data-bird="Swainson's Thrush (Catharus ustulatus)">Swainson's Thrush (Catharus ustulatus)</div>
+        <div class="bird-item visible-bird" data-bird="Tufted Titmouse (Baeolophus bicolor)">Tufted Titmouse (Baeolophus bicolor)</div>
+        <div class="bird-item visible-bird" data-bird="Turkey Vulture (Cathartes aura)">Turkey Vulture (Cathartes aura)</div>
+        <div class="bird-item visible-bird" data-bird="White-breasted Nuthatch (Sitta carolinensis)">White-breasted Nuthatch (Sitta carolinensis)</div>
+        <div class="bird-item visible-bird" data-bird="White-eyed Vireo (Vireo griseus)">White-eyed Vireo (Vireo griseus)</div>
+        <div class="bird-item visible-bird" data-bird="White-throated Sparrow (Zonotrichia albicollis)">White-throated Sparrow (Zonotrichia albicollis)</div>
+        <div class="bird-item visible-bird" data-bird="Wood Duck (Aix sponsa)">Wood Duck (Aix sponsa)</div>
+        <div class="bird-item visible-bird" data-bird="Wood Thrush (Hylocichla mustelina)">Wood Thrush (Hylocichla mustelina)</div>
+        <div class="bird-item visible-bird" data-bird="Yellow-bellied Sapsucker (Sphyrapicus varius)">Yellow-bellied Sapsucker (Sphyrapicus varius)</div>
+        <div class="bird-item visible-bird" data-bird="Yellow-billed Cuckoo (Coccyzus americanus)">Yellow-billed Cuckoo (Coccyzus americanus)</div>
+        <div class="bird-item visible-bird" data-bird="Yellow-rumped Warbler (Setophaga coronata)">Yellow-rumped Warbler (Setophaga coronata)</div>
+        <div class="bird-item visible-bird" data-bird="Yellow-throated Vireo (Vireo flavifrons)">Yellow-throated Vireo (Vireo flavifrons)</div>
+        <div class="bird-item visible-bird" data-bird="Yellow-throated Warbler (Setophaga dominica)">Yellow-throated Warbler (Setophaga dominica)</div>
       </div>
-    </div> 
 
 
-    <!--JavaScript Link-->
-    <script type="text/javascript" src="js/main.js"></script>
-  </body>
+
+  <!-- The div to display the map -->
+  <div id="topDiv">
+    <img src="https://img.icons8.com/?size=100&id=bjCki5vQLL9b&format=png&color=686961" alt="Logo" class="topDivLogo" height="40px"/>
+    <h1 class="topDivTitle">Twin Lakes State Park</h1>
+    <img id="infoBtn" class="info-button" src="images/infobutton.png" alt="Information">
+  </div>
+  <div id="viewDiv">
+    <div class="popup">
+      <button id="close">&times;</button>
+      <h1>Twin Lakes State Park</h1>
+      <h2>Prince Edward County, Virginia</h2>
+      <p>In the heart of central Virginia, this 548-acre, historic park offers many cultural, environmental and recreational activities. Overnight accommodations include a 33-site campground and 11 climate-controlled cabins. Visitors enjoy swimming, fishing, hiking, boating and lakeside picnicking.</p>
+      <p>The land for Twin Lakes State Park was initially bought from struggling farmers by the federal government during the Great Depression. Two parks, Goodwin Lake Recreational Area and Prince Edward Lake were founded in 1939. In 1948, M. Conrad Martin was denied access to Staunton River State Park, and a subsequent lawsuit filed against the state led to the establishment of "Prince Edward State Park for Negroes" as Virginia’s eighth state park in 1950, under the "separate but equal" doctrine. The two lake parks operated as racially segregated parks until the early 1960s. In 1976, the parks merged, and the site was renamed Twin Lakes State Park in 1986.</p>
+      <p>NAVIGATION OF THE SITE: Explore the app to learn more about the park, its amenities, lodging options, and trails. We welcome visitor input on the site as well! Please review--and report on--any issues you see in the park. And for birders, review the information on the bird layer, and report on new bird sightings!</p>
+      <p>The right side of the app is where you can enter location information and--most importantly--add info about bird sightings or any issues you see during your visit. The left helps you modify the map view, turn layers on and off, adjust the view of the bird information, and view the map legend.</p>
+      <p>
+        <div class="navigationarea"> 
+          <table id="navigation">
+            <tr>
+                <td>
+                    <table>
+                        <tr>
+                            <td><img src="images/icon-zoom.gif"></td>
+                            <td>Zoom in and out of the map</td>
+                        </tr>
+                        <tr>
+                            <td><img src="images/icon-locate.gif"></td>
+                            <td>Center the map on your current location</td>
+                        </tr>
+                        <tr>
+                            <td><img src="images/icon-home.gif"></td>
+                            <td>Return to the starting view</td>
+                        </tr>
+                        <tr>
+                            <td><img src="images/icon-layers.gif"></td>
+                            <td>Turn specific layers on and off</td>
+                        </tr>
+                        <tr>
+                            <td><img src="images/icon-legend.gif"></td>
+                        <td>Open and close the map legend &#40;lower left&#41;</td>
+                        </tr>
+                    </table>
+                </td>
+                <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                <td>
+                    <table>
+                        <tr>
+                            <td><img src="images/icon-editor.gif"></td>
+                            <td>Toggle the editor window to add/edit data</td>
+                        </tr>
+                        <tr>
+                            <td>&nbsp;</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td><img src="images/birdoptions.gif" class="bird"><br><ul><li><b>Left:</b> toggles bird layer on/off</li><li><b>Middle:</b> toggles colors - members of same species get same random color, quite the rainbow!</li><li><b>Right:</b> filter by species</li></ul></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+          </table> 
+        </div>
+
+      </p>
+      <p class="creator">
+          Created by Eric Johnson for University of Wisconsin-Madison Geography 577 - Spring 2025
+      </p>
+      <button id="letsGo">
+          <e href="#">Go!</e>
+      </button>
+    </div>
+  </div>
+
+  <!--JavaScript Link-->
+  <script type="text/javascript" src="js/main.js"></script>
+ </body>
 </html>

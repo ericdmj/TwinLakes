@@ -5,8 +5,21 @@
     box-sizing: border-box;
 }
 
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+
+
 .popup {
-    background-image: linear-gradient(25deg, #473643ea, #81627aea, #81627aea, #473643ea);
+    background-image: linear-gradient(25deg, #5d8b98ea, #6a9faeea, #6a9faeea, #5d8b98ea);
     width: 75%;
     padding: 40px 50px;
     position: absolute;
@@ -14,14 +27,14 @@
     left: 50%;
     top: 50%;
     border-radius: 15px;
-    font-family: 'Playfair Display', 'Georgia', 'Times', serif;
     display: none;
     z-index: 10000000;
     color: #ffffff;
+    overflow-y: auto;
 }
 
 .popup h1 {
-    text-shadow: 1.5px 1.5px #4D2042;
+    text-shadow: 1.5px 1.5px #354f57;
     text-align: center;
 }
 
@@ -30,7 +43,6 @@
 }
 
 #letsGo {
-    font-family: 'Playfair Display', 'Georgia', 'Times', serif;
     color: #ffffff;
 }
 
@@ -55,7 +67,7 @@
 }
 
 .popup p {
-    font-size: 14px;
+    font-size: 18px;
     margin: 16px 0;
 }
 
@@ -69,6 +81,175 @@
     margin-bottom: 5px;
 }
 
-#navigation td {
-    vertical-align: middle;
+#navigation img.bird {
+  margin-bottom: 0px;
 }
+
+#navigation td {
+    vertical-align: top;
+}
+
+#navigation td ul {
+  list-style-type: none;
+  padding-left: 0px;
+  padding-top: 0px;
+}
+
+.layer-list-wrapper {
+    display: none;
+    position: absolute;
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+    top: 120px;
+    left: 40px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  
+  .layer-list-title {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 3px;
+    color: #da2121;
+  }
+
+  .layer-list-subtitle {
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 8px;
+    color: #6d2a2a;
+  }
+
+  .expand-layerlist .esri-expand__icon {
+    background-color: #fff;
+    border-radius: 4px;
+  }
+
+.custom-container {
+    box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.2);
+    background-color: white; /* optional */
+    border-radius: 8px;       /* optional */
+    padding: 8px;             /* optional */
+}
+
+.custom-expand-btn {
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  transition: background 0.1s ease, box-shadow 0.2s ease;
+}
+
+.custom-expand-btn:hover {
+  background: #F3F3F3; /* Slightly lighter than white */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.custom-expand-btn:active {
+  background: #e0e0e0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) inset;
+}
+
+
+.custom-expand-btn-lg {
+    background: white;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    transition: background 0.1s ease, box-shadow 0.2s ease;
+  }
+  
+  .custom-expand-btn-lg:hover {
+    background: #F3F3F3;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
+  
+  .custom-expand-btn-lg:active {
+    background: #e0e0e0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) inset;
+  }
+
+  .bird-filter-panel {
+    max-height: 300px;
+    overflow-y: auto;
+    position: absolute;
+    top: 250px; /* adjust based on your layout */
+    left: 200px; /* adjust to align with birdsExpandBtn */
+    z-index: 99;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    border-radius: 6px;
+    display: none; /* start hidden */
+  }
+
+
+
+  .bird-item {
+    width: 100%;
+    padding: 12px;
+    text-align: left;
+    vertical-align: baseline;
+    cursor: pointer;
+    height: 40px;
+  }
+
+  .bird-item:focus {
+    background-color: #F3F3F3;
+  }
+
+  .bird-item:hover {
+    background-color: #F3F3F3;
+  }
+
+  #topDiv {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* left-align logo + title */
+    height: 60px;
+    flex-shrink: 0;
+    background: #EFEEDF;
+    border-bottom: 2px solid #d1d3c3;
+    padding: 0 20px;
+    gap: 12px; /* space between logo and title */
+  }
+
+  #viewDiv {
+    flex-grow: 1;
+    height: auto;   /* let flexbox handle it */
+  }
+
+  .topDivTitle {
+    margin: 0;
+    padding: 0;
+    font-weight: bold;
+    font-family: Quattrocento, Georgia, 'Times New Roman', Times, serif;
+    color: #686961;
+  }
+
+  .info-button {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #686961;
+    padding: 8px;
+  }
+  
+  .info-button:hover {
+    color: #444;
+  }
+  
+  .creator {
+    font-style: italic;
+  }

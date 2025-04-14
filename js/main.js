@@ -17,3 +17,6 @@ document.querySelector("#letsGo").addEventListener("click", function () {
   document.querySelector(".popup").style.display = "none";
 });
 
+document.querySelector("#infoBtn").addEventListener("click", function () {
+  document.querySelector(".popup").style.display = "block";
+});
