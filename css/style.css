@@ -19,18 +19,28 @@ body {
 
 
 .popup {
-    background-image: linear-gradient(25deg, #5d8b98ea, #6a9faeea, #6a9faeea, #5d8b98ea);
-    width: 75%;
-    padding: 40px 50px;
-    position: absolute;
-    transform: translate(-50%, -50%);
-    left: 50%;
-    top: 50%;
-    border-radius: 15px;
-    display: none;
-    z-index: 10000000;
-    color: #ffffff;
-    overflow-y: auto;
+  background-image: linear-gradient(25deg, #5d8b98ea, #6a9faeea, #6a9faeea, #5d8b98ea);
+  width: 90vw;
+  max-height: 90vh;
+  padding: 20px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 15px;
+  display: none;
+  z-index: 10000000;
+  color: #ffffff;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .popup {
+    width: 95vw;
+    padding: 16px;
+    font-size: 15px;
+  }
 }
 
 .popup h1 {
