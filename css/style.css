@@ -326,3 +326,39 @@ body {
     }
   }
   
+
+  @media only screen and (max-width: 600px) {
+    /* Make widget text larger */
+    .esri-widget,
+    .esri-widget__heading,
+    .esri-editor__title,
+    .esri-editor__feature-list-item-title,
+    .esri-editor__form-container,
+    .esri-editor__field-label {
+      font-size: 1.1em !important;
+    }
+  
+    /* Make buttons bigger */
+    .esri-button,
+    .esri-widget--button {
+      font-size: 1.1em !important;
+      padding: 10px 16px !important;
+    }
+  
+    /* Adjust calcite components if you're using any */
+    calcite-button,
+    calcite-icon {
+      --calcite-ui-text-size: 1.2rem;
+    }
+  
+    /* Optional: bump icon sizes */
+    .esri-icon,
+    .esri-widget__icon {
+      font-size: 1.4em !important;
+    }
+  
+    /* Optional: increase expand widget size */
+    .esri-expand__container {
+      min-width: 280px !important;
+    }
+  }
