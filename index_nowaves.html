@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <title>
+   Twin Lakes State Park
+  </title>
+  <meta charset="utf-8"/>
+  <meta content="width=device width,inital-scale=1" name="viewport"/>
+  <meta content="" name="description">
+   <!-- adding my Google font -->
+   <link href="https://fonts.googleapis.com" rel="preconnect"/>
+   <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+   <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet"/>
+   <link href="https://fonts.googleapis.com/css2?family=Quattrocento:wght@400;700&display=swap" rel="stylesheet">
+   <!-- adding my stylesheet -->
+   <link href="css/style.css" rel="stylesheet"/>
+    <!-- Calls for the ArcGIS API's CSS file and JS library. -->
+    <link href="https://js.arcgis.com/4.30/esri/themes/light/main.css" rel="stylesheet">
+     <script src="https://js.arcgis.com/4.30/">
+     </script>
+     <!-- Adding the modules needed for a full-screen map app -->
+     <script>
+      require(["esri/config", 
+      "esri/Map", 
+      "esri/views/MapView",
+      "esri/Basemap",
+      "esri/widgets/BasemapGallery",
+      "esri/widgets/Expand",
+      "esri/widgets/Locate",
+      "esri/widgets/Search",
+      "esri/Graphic",
+      "esri/layers/GraphicsLayer",
+      "esri/layers/FeatureLayer",
+      "esri/widgets/Editor",
+      "esri/widgets/Legend",
+      "esri/core/reactiveUtils",
+      "esri/widgets/LayerList",
+      "esri/form/elements/FieldElement",
+      "esri/form/elements/inputs/TextAreaInput",
+      "esri/popup/support/FieldInfoFormat",
+      "esri/layers/VectorTileLayer",
+      "esri/renderers/SimpleRenderer",
+      "esri/symbols/SimpleLineSymbol",
+      "esri/widgets/Home"
+      ], 
+      function(esriConfig, Map, MapView, Basemap, BasemapGallery, Expand, Locate, Search, Graphic, GraphicsLayer, FeatureLayer, Editor, Legend, reactiveUtils, LayerList, FieldElement, TextAreaInput, FieldInfoFormat, VectorTileLayer, SimpleRenderer,SimpleLineSymbol,Home) {   
+        let editBirdLayer, editIssuesLayer;
+        esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurA0NJnJge5mvBzdWw05KZVSc-rH0g5ATkOEM72zKXv9kE7x87aUFvshXADkQU53T8CakkL1B1R2r7I2_9kfS1-XHaF7MVYxQ6VLd5p6tEgpzr75twGhsRz6fK1dSQ2ogOJ1_dHzcsbRTtsGi03Zua1qchYuESnptzJ80EJ1mYqWJo3iuugUMeoYeXbWxZQfRu9bQKBf9ibtwnTc5YG16I7WxJOj3SrYYt-VrPMyknXjtAT1_V1XfrGt6";
+        // creates the map and assigns initial basemap
+        const vectorTileLayer = new VectorTileLayer({
+          portalItem: {
+            id: "8421c3eb83b84327812b8958fb545813"
+          }
+        });
+
+        const map = new Map({
+          basemap: new Basemap({
+            baseLayers: [vectorTileLayer]
+          })
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+          center: [-78.2726, 37.1732],
+          zoom: 15
+        });
+
+        // Define a unique value renderer and symbols
+        const parklayerRenderer = {
+            type: "simple",
+            symbol: {
+                type: "simple-fill",
+                color: "rgba(129,141,120,0.2)",
+                outline: {
+                    style: "solid",
+                    color: "rgba(129,141,120,0.8)",
+                    width: "3px"
+                }
+            }
+        };
+        
+        const parkLayer = new FeatureLayer({
+          // URL to the service
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/4",
+          renderer: parklayerRenderer,
+          maxScale: 200,
+          title: "Park Boundary"
+        });
+
+        const trailslayerRenderer = new SimpleRenderer({
+          symbol: new SimpleLineSymbol({
+            width: 2,
+            color: "#A553B7",
+            join: "round",
+            style: "short-dot"
+          }),
+        });
+
+        const trailLabels = {
+          symbol: {
+            type: "text",
+            color: "#63316d",
+            haloColor: "#FFFFFF",
+            haloSize: "1px",
+            font: {
+              size: 9,
+              weight: "bold"
+            }
+          },
+          labelPlacement: "below-along",  // places label along the trail
+          labelExpressionInfo: {
+            expression: "$feature.Trail_Name"  // change to your field name
+          },
+          repeatLabel: true,              // 👈 Enable label repetition along the line
+          repeatLabelDistance: 200,
+          minScale: 5000
+        };
+
+
+        const trailsLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/2",
+          title: "Hiking Trails",
+          renderer: trailslayerRenderer,
+          labelingInfo: [trailLabels],
+          labelsVisible: true,
+          popupEnabled: true,
+          minScale: 10000   
+        });
+
+        //add popup to trails layer 
+        trailsLayer.popupTemplate = {
+            title: "Trail Name: {Trail_Name}",
+            content: [
+              {
+                type: "text",
+                text: "<b>Blaze color:</b> {Blaze}"
+              },
+              /* {
+              type: "media", // ← this is important; the overall type should be "media"
+              mediaInfos: [
+                  {
+                  type: "image", // ← this is the type of media inside the mediaInfos array
+                  caption: "<div style='text-align: center'>{Blaze}</div>",
+                  value: {
+                      sourceURL: "https://img.icons8.com/?size=50&id=j2enLUaK6V7Q&format=png&color={BlazeHex}"
+                  }
+                  }
+              ]
+              }, */
+              {
+                type: "text",
+                text: "<b>Mileage:</b> {expression/mileage} mi"
+              },
+              {
+                type: "text",
+                text: "<b>Usage:</b> {TRAIL_USER} <br><br> <em>H = Hiking<br>B = Biking<br>MB = Mountain Biking<br>E = Equestrian</em>"
+              },
+              {
+                type: "text",
+                text: "<b>Difficulty:</b> {Difficulty}"
+              },
+              {
+                type: "text",
+                text: "<b>Surface:</b> {MainSurfac}"
+              },
+              {
+                type: "text",
+                text: "<b>Status:</b> {Status}"
+              }
+            ],
+            expressionInfos: [
+            {
+              name: "mileage",
+              title: "Mileage",
+              expression: `
+                var miles = $feature.Shape__Length * 0.0005681818;
+                return Round(miles, 1);
+              `
+            }
+          ]
+        };
+
+
+
+
+
+        const lodginglayerRenderer = {
+            type: "unique-value",
+            field: "Type",
+            uniqueValueInfos: [
+                {
+                value: "cabin",
+                label: "Cabin",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/cabin.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "tent_popup",
+                label: "Camping Area",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/tent.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "25-ft-rv",
+                label: "25-foot RV",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/rv25.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "30-ft-rv",
+                label: "30-foot RV",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/rv30.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "36-ft-rv",
+                label: "36-foot RV",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/rv36.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                }
+            ]
+        };
+
+        //const to make the lodging labels
+        const lodgingLabels = {
+          symbol: {
+            type: "text",
+            color: "#603913",
+            haloColor: "#F4EEE3",
+            haloSize: "1px",
+            font: {
+              size: "13px",
+              family: "Roboto",
+              weight: "bold"
+            }
+          },
+          labelPlacement: "above-right",
+          labelExpressionInfo: {
+            expression: "$feature.Label"
+          },
+          minScale: 4000
+        };
+        
+
+        const lodgingLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/1",
+          renderer: lodginglayerRenderer,
+          title: "Lodging Locations",
+          labelingInfo: [lodgingLabels], // adding the labels
+          popupEnabled: true,
+          minScale: 10000
+        });
+
+        //add popup to lodging layer 
+        lodgingLayer.popupTemplate = {
+          title: "{Label}",
+          content: [
+            {
+                type: "text",
+                text: "{Description}"
+            },
+            {
+                type: "text",
+                text: "<em>To learn more about renting this particular site, and cabins and camping (tents and RVs) in general, please visit <a href='https://www.dcr.virginia.gov/state-parks/twin-lakes#cabins_camping'>Twin Lakes State Park lodging</a>.</em>"
+            }
+
+          ]
+
+        };
+      
+        
+        
+        const amenitieslayerRenderer = {
+            type: "unique-value",
+            field: "Type",
+            uniqueValueInfos: [
+                {
+                value: "bath_house",
+                label: "Bath House",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/bathhouse.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "boat_ramp",
+                label: "Boat Ramp",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/boatramp.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "boat_rental",
+                label: "Boat Rental",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/boatrental.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "conference_center",
+                label: "Conference Center",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/conferencecenter.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "contact_station",
+                label: "Contact Station",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/contactstation.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "dumping_station",
+                label: "Dumping Station",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/dumpingstation.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "firewood",
+                label: "Firewood",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/firewood.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "fishing_pier",
+                label: "Fishing Pier",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/fishingpier.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "gazebo",
+                label: "Gazebo",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/gazebo.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "gifts_shopping",
+                label: "Gifts/Shopping",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/giftsshopping.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "park_office",
+                label: "Park Office",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/contactstation.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "parking",
+                label: "Parking",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/parking.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "picnic_shelter",
+                label: "Picnic Shelter",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/picnicshelter.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "playground",
+                label: "Playground",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/playground.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "restroom",
+                label: "Restrooms",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/restroom.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "swim_complex",
+                label: "Snack Bar",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/snackbar.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "swimming",
+                label: "Swimming",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/swimming.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "trash_recycling",
+                label: "Trash/Recycling",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/trashrecycling.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                },
+                {
+                value: "vending_drink",
+                label: "Vending/Drink",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/vendingdrink.svg",
+                    width: "32px",
+                    height: "32px"
+                }
+                }
+            ]
+        };
+
+        //const to make the amenities labels
+        const amenitiesLabels = {
+          symbol: {
+            type: "text",
+            color: "#636d5d",
+            haloColor: "#F4EEE3",
+            haloSize: "1px",
+            font: {
+              size: "11px",
+              family: "Roboto",
+              weight: "bold"
+            }
+          },
+          labelPlacement: "below-center",
+          labelExpressionInfo: {
+            expression: "$feature.Label"
+          },
+          minScale: 4000
+        };
+        
+        const amenitiesLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/0",
+          renderer: amenitieslayerRenderer,
+          title: "Park Amenities",
+          popupEnabled: true,
+          labelingInfo: [amenitiesLabels],
+          minScale: 10000
+        });
+
+
+
+
+        function hashStringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let color = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+            return "000000".substring(0, 6 - color.length) + color;
+        };
+        
+        
+        const birdnotesTextarea = new FieldElement({
+            fieldName: "OBSER_NOTES",
+            label: "Additional Notes",
+            description: "Add some additional notes",
+            input: {
+                type: "text-area"
+            }
+        });
+        
+        // Define a simple renderer and symbol
+        const birdslayerRenderer = {
+          type: "simple",
+          symbol: {
+            type: "picture-marker",
+            url: "	https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=000000",
+            width: "16px",
+            height: "16px"
+          }
+        }
+        
+        const birdsLayer = new FeatureLayer({
+          url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/birdobsv/FeatureServer",
+          renderer: birdslayerRenderer,
+          title: "Bird Sightings",
+          minScale: 10000,
+          definitionExpression: "1=1", // optional, just a placeholder if needed
+          // 👇 This sets the template name that appears in the editor
+          featureReduction: null,
+          popupEnabled: true,
+          outFields: ["*"],
+          // 👇 Here's the key part!
+          editingEnabled: true,
+          preferredTimeZone: "America/New_York",
+          templates: [{
+            name: "Add bird sighting", // This is the custom label that replaces "New Feature"
+            description: "Add a new bird sighting",
+            prototype: {
+              attributes: {}
+            }
+          }]
+        });
+
+        //add popup to birds layer 
+        birdsLayer.popupTemplate = {
+          title: "{BIRD_NAME}",
+          content: [
+            {
+              type: "text",
+              text: "<b>Date Observed:</b> {DATE_OBSER_NEW}"
+            },
+            {
+                type: "text",
+                text: "<b>Time Observed:</b> {TIME_OBSER_NEW}"
+            },
+            {
+                type: "text",
+                text: "<b>Observation Notes:</b> {OBSER_NOTES}"
+            },
+            {
+                type: "text",
+                text: "<b>Observer:</b> {OBSERVER_NAME}"
+            }
+          ]
+        };
+
+
+        const issuenotesTextarea = new FieldElement({
+            fieldName: "issuenotes",
+            label: "Additional Notes",
+            description: "Add some additional notes",
+            input: {
+                type: "text-area"
+            }
+        });
+        
+        const issuesRenderer = {
+            type: "unique-value",
+            field: "issuetype",
+            uniqueValueInfos: [
+                {
+                value: "trailblock",
+                label: "Trail Blockage",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/blockedpath.png",
+                    width: "22px",
+                    height: "22px"
+                }
+                },
+                {
+                value: "litter",
+                label: "Litter",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/litter.png",
+                    width: "22px",
+                    height: "22px"
+                }
+                },
+                {
+                value: "animalinsect",
+                label: "Animal or Insect",
+                symbol: {
+                    type: "picture-marker",
+                    url: "images/animalinsect.png",
+                    width: "22px",
+                    height: "22px"
+                }
+                }
+            ]
+        };
+        
+
+        const issuesLayer = new FeatureLayer({
+            url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/6",
+            renderer: issuesRenderer,
+            title: "Park Issues",
+            popupEnabled: true,
+            minScale: 10000,
+            outFields: ["*"],
+            editingEnabled: true,
+            templates: [
+                {
+                name: "Report trail blockage",
+                description: "Report a blocked or impassable trail",
+                prototype: {
+                    attributes: {
+                    issuetype: "trailblock"
+                    }
+                }
+                },
+                {
+                name: "Report litter",
+                description: "Report trash or litter in the park",
+                prototype: {
+                    attributes: {
+                    issuetype: "litter"
+                    }
+                }
+                },
+                {
+                name: "Report animal or insect",
+                description: "Report an animal or insect encounter or concern",
+                prototype: {
+                    attributes: {
+                    issuetype: "animalinsect"
+                    }
+                }
+                }
+            ]
+            });
+
+            //add popup to issues layer 
+            issuesLayer.popupTemplate = {
+            title: "{issuetype}",
+            content: [
+              {
+                type: "text",
+                text: "<b>Issue Notes:</b> {issuenotes}"
+              },
+              {
+                type: "text",
+                text: "<b>Issue reported by:</b> {issuereporter}"
+              }
+            ]
+            };
+
+        //adding the feature layer to the map
+        map.add(parkLayer);
+        map.add(trailsLayer);
+        map.add(lodgingLayer);
+        map.add(amenitiesLayer);
+        map.add(birdsLayer);
+        map.add(issuesLayer);
+
+
+
+        view.when(() => {
+
+        // create the locate button
+        const locateBtn = new Locate({
+          view: view
+        });
+
+        // Add the locate widget to the top left corner of the view
+        view.ui.add(locateBtn, {
+          position: "top-left",
+          index: 1
+        });
+
+        // Add home widget
+        const homeBtn = new Home({
+          view: view
+        });
+
+        // Add the home button to the top left corner of the view
+        view.ui.add(homeBtn, {
+          position: "top-left",
+          index: 2
+        });
+
+
+
+          const editor = new Editor({
+          view: view,
+          layerInfos: [{
+            layer: birdsLayer, // pass in the feature layer,
+            customCreateText: "Add bird sighting",
+            formTemplate:  {
+              elements: [
+                { 
+                  type: "field",
+                  fieldName: "BIRD_NAME",
+                  label: "Bird Name"
+                },
+                {
+                  type: "field",
+                  fieldName: "DATE_OBSER_NEW",
+                  label: "Observation Date"
+                },
+                {
+                  type: "field",
+                  fieldName: "TIME_OBSER_NEW",
+                  label: "Observation Time"
+                },
+                birdnotesTextarea,
+                {
+                  type: "field",
+                  fieldName: "OBSERVER_NAME",
+                  label: "Observer Name or Initials"
+                }
+              ]
+            },
+            enabled: true, // Default is true, set to false to disable editing functionality.
+            addEnabled: true, // Default is true, set to false to disable the ability to add a new feature.
+            updateEnabled: true, // Default is true, set to false to disable the ability to edit an existing feature.
+            deleteEnabled: true, // Default is true, set to false to disable the ability to delete features.
+            attributeUpdatesEnabled: true, // Default is true, set to false to disable the ability to edit attributes in the update workflow.
+            geometryUpdatesEnabled: true, // Default is true, set to false to disable the ability to edit feature geometries in the update workflow.
+            attachmentsOnCreateEnabled: true, //Default is true, set to false to disable the ability to work with attachments while creating features.
+            attachmentsOnUpdateEnabled: true //Default is true, set to false to disable the ability to work with attachments while updating/deleting features.
+          },
+          {
+            layer: issuesLayer,
+            formTemplate: {
+              elements: [
+                {
+                  type: "field",
+                  fieldName: "issuetype",
+                  label: "Issue Type"
+                },
+                issuenotesTextarea,
+                {
+                  type: "field",
+                  fieldName: "issuereporter",
+                  label: "Reporter Name or Initials"
+                }
+              ]
+            },
+            enabled: true,
+            addEnabled: true,
+            updateEnabled: true,
+            deleteEnabled: true,
+            attributeUpdatesEnabled: true,
+            geometryUpdatesEnabled: true,
+            attachmentsOnCreateEnabled: true,
+            attachmentsOnUpdateEnabled: true
+          },
+          {
+            layer: parkLayer,
+            enabled: false
+          },
+          {
+            layer: trailsLayer,
+            enabled: false
+          },
+          {
+            layer: lodgingLayer,
+            enabled: false
+          },
+          {
+            layer: amenitiesLayer,
+            enabled: false
+          }],
+            visibleElements: {
+              settingsMenu: false,
+              createFeatures: false
+            }
+        });
+
+            
+  
+            // Create an Expand instance for the Editor and set the content
+            // property to the DOM node of the Editor widget
+            const editorExpand = new Expand({
+              view: view,
+              content: editor,
+              expanded: true,
+              expandTooltip: "Expand Editor"
+            });
+
+            // Add the expand instance to the ui
+            view.ui.add(editorExpand, "top-right");
+
+
+
+            const customExpandBtn = document.createElement("div");
+            customExpandBtn.className = "custom-expand-btn";
+            customExpandBtn.innerHTML = `
+            <calcite-icon icon="layers" scale="s" style="color: #6A6A6A;"></calcite-icon>
+            `;
+            customExpandBtn.title = "Show Map Layers";
+            
+            const layerListContainer = document.createElement("div");
+            layerListContainer.className = "layer-list-wrapper";
+
+            const header = document.createElement("div");
+            header.className = "layer-list-title";
+            header.innerText = "Map Layers";
+
+            const subheader = document.createElement("div");
+            subheader.className = "layer-list-subtitle";
+            subheader.innerText = "Turn layers on and off";
+
+            const layerListDiv = document.createElement("div");
+            layerListContainer.appendChild(header);
+            layerListContainer.appendChild(subheader)
+            layerListContainer.appendChild(layerListDiv);
+
+            // Add the LayerList widget to that inner div
+            const layerList = new LayerList({
+            view: view,
+            container: layerListDiv
+            });
+
+            let isVisible = false;
+            customExpandBtn.addEventListener("click", () => {
+              isVisible = !isVisible;
+              layerListContainer.style.display = isVisible ? "block" : "none";
+
+              // Swap icon inside the button
+              customExpandBtn.innerHTML = `
+                <calcite-icon icon="${isVisible ? 'chevrons-left' : 'layers'}" scale="s" style="color: #6A6A6A;"></calcite-icon>
+              `;
+            });
+
+            view.ui.add(customExpandBtn, "top-left");
+            view.ui.add(layerListContainer, "top-left");
+
+
+            
+            
+
+            // Create the main container
+            const birdToggleContainer = document.createElement("div");
+            birdToggleContainer.className = "custom-container";
+            birdToggleContainer.style.display = "flex";
+            birdToggleContainer.style.flexDirection = "column";
+            birdToggleContainer.style.alignItems = "center";
+            birdToggleContainer.style.marginTop = "2px";
+
+            // Create the label
+            const birdLabel = document.createElement("div");
+            birdLabel.textContent = "Bird Options";
+            birdLabel.style.fontSize = "12px";
+            birdLabel.style.fontWeight = "bold";
+            birdLabel.style.color = "#333";
+            birdLabel.style.marginBottom = "4px";
+
+            // Create a row for the toggle buttons
+            const birdButtonRow = document.createElement("div");
+            birdButtonRow.style.display = "flex";
+            birdButtonRow.style.flexDirection = "row";
+            birdButtonRow.style.gap = "8px";
+
+            // === Visibility Toggle ===
+            const birdVisibilityBtn = document.createElement("div");
+            birdVisibilityBtn.className = "custom-expand-btn-lg";
+            birdVisibilityBtn.style.textAlign = "center";
+            birdVisibilityBtn.style.cursor = "pointer";
+
+            let birdsVisible = true;
+            birdVisibilityBtn.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                <img src="https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=000000" width="16" height="16" alt="Toggle Bird Layer" />
+                <span style="font-size: 10px; color: #6A6A6A;">off</span>
+              </div>
+            `;
+            birdVisibilityBtn.title = "Toggle Bird Sightings";
+
+            birdVisibilityBtn.addEventListener("click", () => {
+            birdsVisible = !birdsVisible;
+            birdsLayer.visible = birdsVisible;
+
+            birdVisibilityBtn.innerHTML = birdsVisible
+              ? `
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <img src="https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=000000" width="16" height="16" alt="Bird Layer On" />
+                  <span style="font-size: 10px; color: #6A6A6A;">off</span>
+                </div>`
+              : `
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <img src="https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=6A6A6A" width="16" height="16" alt="Bird Layer Off" />
+                  <span style="font-size: 10px; color: #6A6A6A;">on</span>
+                </div>`;
+            });
+
+            // === Renderer Toggle ===
+            const rendererToggleBtn = document.createElement("div");
+            rendererToggleBtn.className = "custom-expand-btn-lg";
+            rendererToggleBtn.style.textAlign = "center";
+            rendererToggleBtn.style.cursor = "pointer";
+
+            let useHashedRenderer = false;
+            const defaultBirdRenderer = birdslayerRenderer;
+
+            rendererToggleBtn.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                <img src="images/rainbowbird.png" width="16" height="16" alt="Renderer Toggle" />
+                <span style="font-size: 10px; color: #6A6A6A;">Color</span>
+              </div>
+            `;
+            rendererToggleBtn.title = "Each species its own color!";
+
+            rendererToggleBtn.addEventListener("click", () => {
+            useHashedRenderer = !useHashedRenderer;
+
+            if (useHashedRenderer) {
+                birdsLayer.queryFeatures({
+                where: "1=1",
+                outFields: ["BIRD_NAME"],
+                returnGeometry: false,
+                returnDistinctValues: true,
+                orderByFields: ["BIRD_NAME"]
+                }).then((result) => {
+                const birdTypes = [...new Set(result.features.map(f => f.attributes.BIRD_NAME).filter(Boolean))];
+
+                const uniqueValueInfos = birdTypes.map(bird => {
+                    const color = hashStringToColor(bird);
+                    return {
+                    value: bird,
+                    label: bird,
+                    symbol: {
+                        type: "picture-marker",
+                        url: `https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=${color}`,
+                        width: "16px",
+                        height: "16px"
+                    }
+                    };
+                });
+
+                birdsLayer.renderer = {
+                    type: "unique-value",
+                    field: "BIRD_NAME",
+                    uniqueValueInfos: uniqueValueInfos
+                };
+
+                rendererToggleBtn.innerHTML = `
+                  <div style="display: flex; flex-direction: column; align-items: center;">
+                    <img src="https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=000000" width="16" height="16" alt="Renderer Toggle" />
+                    <span style="font-size: 10px; color: #6A6A6A;">Mono</span>
+                  </div>
+                `;
+                });
+            } else {
+                birdsLayer.renderer = defaultBirdRenderer;
+
+                rendererToggleBtn.innerHTML = `
+                  <div style="display: flex; flex-direction: column; align-items: center;">
+                    <img src="images/rainbowbird.png" width="16" height="16" alt="Renderer Toggle" />
+                    <span style="font-size: 10px; color: #6A6A6A;">Color</span>
+                  </div>
+                `;
+            }
+            });
+
+
+            
+
+            
+
+
+            // === Create a manual trigger button for the filter Expand ===
+            const birdsExpandBtn = document.createElement("div");
+            birdsExpandBtn.className = "custom-expand-btn-lg";
+            birdsExpandBtn.style.textAlign = "center";
+            birdsExpandBtn.style.cursor = "pointer";
+            birdsExpandBtn.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                <calcite-icon icon="filter" scale="s"></calcite-icon>
+                <span style="font-size: 10px; color: #6A6A6A;">Filter</span>
+              </div>
+            `;
+            birdsExpandBtn.title = "Filter Birds";
+
+            
+
+
+            const birdsElement = document.getElementById("birds-filter");
+            birdsElement.style.display = "none"; // start hidden
+
+            let birdsFilterVisible = false;
+
+            birdsExpandBtn.addEventListener("click", () => {
+            birdsFilterVisible = !birdsFilterVisible;
+            birdsElement.style.display = birdsFilterVisible ? "block" : "none";
+
+            // Swap icon and label
+            birdsExpandBtn.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                <calcite-icon icon="${birdsFilterVisible ? 'chevrons-up' : 'filter'}" scale="s"></calcite-icon>
+                <span style="font-size: 10px; color: #6A6A6A;">Filter</span>
+              </div>
+            `;
+
+            // Clear map filter when panel is closed
+            if (!birdsFilterVisible && editBirdLayer) {
+              editBirdLayer.filter = null;
+            }
+          });
+
+
+
+
+
+            // Put everything together
+            birdButtonRow.appendChild(birdVisibilityBtn);
+            birdButtonRow.appendChild(rendererToggleBtn);
+            birdButtonRow.appendChild(birdsExpandBtn);
+            birdToggleContainer.appendChild(birdLabel);
+            birdToggleContainer.appendChild(birdButtonRow);
+
+            view.ui.add(birdToggleContainer, {
+              position: "top-left",
+              index: 4
+            });
+
+
+
+            // set an attribute filter on Bird Sightings layer view
+            function filterByBird(event) {
+              const selectedBird = event.target.getAttribute("BIRD_NAME");
+                editBirdLayer.filter = {
+                  where: "BIRD_NAME = '" + selectedBird + "'"
+                };
+            }
+
+
+            const birdNodes = document.querySelectorAll(`.bird-item`);
+
+            // click event handler for bird filter
+            birdsElement.addEventListener("click", filterByBird);
+
+            // User clicks on bird name and sets an attribute filter on the bird layer view 
+            // to display the sightings of that bird species
+            function filterByBird(event) {
+              const selectedBird = event.target.getAttribute("data-bird");
+              editBirdLayer.filter = {
+                where: "BIRD_NAME = '" + selectedBird + "'"
+              };
+            }
+
+            view.whenLayerView(birdsLayer).then((layerView) => {
+              editBirdLayer = layerView;
+              // set up UI items
+              birdsElement.style.visibility = "visible";
+              
+            });
+
+
+            view.on("pointer-move", function (event) {
+                view.hitTest(event).then(function (response) {
+                    const results = response.results;
+
+                    const isHovering = results.some(result =>
+                    result.graphic?.layer === birdsLayer ||
+                    result.graphic?.layer === issuesLayer ||
+                    result.graphic?.layer === trailsLayer ||
+                    result.graphic?.layer === lodgingLayer
+                    );
+
+                    view.container.style.cursor = isHovering ? "pointer" : "default";
+                });
+            });
+
+
+            // adding a legend
+            let legend = new Legend({
+              view: view,
+              // styles the legend as a card
+              style: "card"
+            
+            });
+
+
+            // Create an Expand instance for the legend and set the content
+            // property to the DOM node of the legend widget
+            const legendExpand = new Expand({
+              view: view,
+              content: legend,
+              expandTooltip: "Expand Legend"
+            });
+
+            // Add the expand instance to the ui
+            view.ui.add(legendExpand, "bottom-left");
+
+
+            var coordsWidget = document.createElement("div");
+            coordsWidget.id = "coordsWidget";
+            coordsWidget.className = "esri-widget esri-component";
+            coordsWidget.style.padding = "7px 15px 5px";
+
+            view.ui.add(coordsWidget, "bottom-right");
+
+
+            function showCoordinates(pt) {
+              var coords =
+                "Lat/Lon " +
+                pt.latitude.toFixed(3) +
+                " " +
+                pt.longitude.toFixed(3) +
+                " | Scale 1:" +
+                Math.round(view.scale * 1) / 1 +
+                " | Zoom " +
+                view.zoom;
+              coordsWidget.innerHTML = coords;
+            }
+
+            view.watch("stationary", function (isStationary) {
+              showCoordinates(view.center);
+            });
+
+            view.on("pointer-move", function (evt) {
+              showCoordinates(view.toMap({ x: evt.x, y: evt.y }));
+            });
+
+
+          });
+        });
+     </script>
+     <!-- CSS to make a full-screen map -->
+     <!-- <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 95%;
+        width: 100%;
+      } 
+     </style> -->
+    </link>
+   </link>
+  </meta>
+ </head>
+ <body>
+
+    <!-- creates the filter list -->
+    <div id="birds-filter" class="esri-widget bird-filter-panel">
+        <div class="bird-item visible-bird" data-bird="Acadian Flycatcher (Empidonax virescens)">Acadian Flycatcher (Empidonax virescens)</div>
+        <div class="bird-item visible-bird" data-bird="American Crow (Corvus brachyrhynchos)">American Crow (Corvus brachyrhynchos)</div>
+        <div class="bird-item visible-bird" data-bird="American Goldfinch (Spinus tristis)">American Goldfinch (Spinus tristis)</div>
+        <div class="bird-item visible-bird" data-bird="American Kestrel (Falco sparverius)">American Kestrel (Falco sparverius)</div>
+        <div class="bird-item visible-bird" data-bird="American Redstart (Setophaga ruticilla)">American Redstart (Setophaga ruticilla)</div>
+        <div class="bird-item visible-bird" data-bird="American Robin (Turdus migratorius)">American Robin (Turdus migratorius)</div>
+        <div class="bird-item visible-bird" data-bird="Bald Eagle (Haliaeetus leucocephalus)">Bald Eagle (Haliaeetus leucocephalus)</div>
+        <div class="bird-item visible-bird" data-bird="Barred Owl (Strix varia)">Barred Owl (Strix varia)</div>
+        <div class="bird-item visible-bird" data-bird="Belted Kingfisher (Megaceryle alcyon)">Belted Kingfisher (Megaceryle alcyon)</div>
+        <div class="bird-item visible-bird" data-bird="Black Vulture (Coragyps atratus)">Black Vulture (Coragyps atratus)</div>
+        <div class="bird-item visible-bird" data-bird="Black-and-white Warbler (Mniotilta varia)">Black-and-white Warbler (Mniotilta varia)</div>
+        <div class="bird-item visible-bird" data-bird="Blackpoll Warbler (Setophaga striata)">Blackpoll Warbler (Setophaga striata)</div>
+        <div class="bird-item visible-bird" data-bird="Blue Grosbeak (Passerina caerulea)">Blue Grosbeak (Passerina caerulea)</div>
+        <div class="bird-item visible-bird" data-bird="Blue Jay (Cyanocitta cristata)">Blue Jay (Cyanocitta cristata)</div>
+        <div class="bird-item visible-bird" data-bird="Blue-gray Gnatcatcher (Polioptila caerulea)">Blue-gray Gnatcatcher (Polioptila caerulea)</div>
+        <div class="bird-item visible-bird" data-bird="Broad-winged Hawk (Buteo platypterus)">Broad-winged Hawk (Buteo platypterus)</div>
+        <div class="bird-item visible-bird" data-bird="Brown Creeper (Certhia americana)">Brown Creeper (Certhia americana)</div>
+        <div class="bird-item visible-bird" data-bird="Brown-headed Cowbird (Molothrus ater)">Brown-headed Cowbird (Molothrus ater)</div>
+        <div class="bird-item visible-bird" data-bird="Canada Goose (Branta canadensis)">Canada Goose (Branta canadensis)</div>
+        <div class="bird-item visible-bird" data-bird="Carolina Chickadee (Poecile carolinensis)">Carolina Chickadee (Poecile carolinensis)</div>
+        <div class="bird-item visible-bird" data-bird="Carolina Wren (Thryothorus ludovicianus)">Carolina Wren (Thryothorus ludovicianus)</div>
+        <div class="bird-item visible-bird" data-bird="Cedar Waxwing (Bombycilla cedrorum)">Cedar Waxwing (Bombycilla cedrorum)</div>
+        <div class="bird-item visible-bird" data-bird="Chimney Swift (Chaetura pelagica)">Chimney Swift (Chaetura pelagica)</div>
+        <div class="bird-item visible-bird" data-bird="Chipping Sparrow (Spizella passerina)">Chipping Sparrow (Spizella passerina)</div>
+        <div class="bird-item visible-bird" data-bird="Common Grackle (Quiscalus quiscula)">Common Grackle (Quiscalus quiscula)</div>
+        <div class="bird-item visible-bird" data-bird="Common Yellowthroat (Geothlypis trichas)">Common Yellowthroat (Geothlypis trichas)</div>
+        <div class="bird-item visible-bird" data-bird="Dark-eyed Junco (Junco hyemalis)">Dark-eyed Junco (Junco hyemalis)</div>
+        <div class="bird-item visible-bird" data-bird="Double-crested Cormorant (Nannopterum auritum)">Double-crested Cormorant (Nannopterum auritum)</div>
+        <div class="bird-item visible-bird" data-bird="Downy Woodpecker (Dryobates pubescens)">Downy Woodpecker (Dryobates pubescens)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Bluebird (Sialia sialis)">Eastern Bluebird (Sialia sialis)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Kingbird (Tyrannus tyrannus)">Eastern Kingbird (Tyrannus tyrannus)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Meadowlark (Sturnella magna)">Eastern Meadowlark (Sturnella magna)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Phoebe (Sayornis phoebe)">Eastern Phoebe (Sayornis phoebe)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Towhee (Pipilo erythrophthalmus)">Eastern Towhee (Pipilo erythrophthalmus)</div>
+        <div class="bird-item visible-bird" data-bird="Eastern Wood-Pewee (Contopus virens)">Eastern Wood-Pewee (Contopus virens)</div>
+        <div class="bird-item visible-bird" data-bird="European Starling (Sturnus vulgaris)">European Starling (Sturnus vulgaris)</div>
+        <div class="bird-item visible-bird" data-bird="Fish Crow (Corvus ossifragus)">Fish Crow (Corvus ossifragus)</div>
+        <div class="bird-item visible-bird" data-bird="Golden-crowned Kinglet (Regulus satrapa)">Golden-crowned Kinglet (Regulus satrapa)</div>
+        <div class="bird-item visible-bird" data-bird="Gray Catbird (Dumetella carolinensis)">Gray Catbird (Dumetella carolinensis)</div>
+        <div class="bird-item visible-bird" data-bird="Great Crested Flycatcher (Myiarchus crinitus)">Great Crested Flycatcher (Myiarchus crinitus)</div>
+        <div class="bird-item visible-bird" data-bird="Hairy Woodpecker (Dryobates villosus)">Hairy Woodpecker (Dryobates villosus)</div>
+        <div class="bird-item visible-bird" data-bird="Hermit Thrush (Catharus guttatus)">Hermit Thrush (Catharus guttatus)</div>
+        <div class="bird-item visible-bird" data-bird="Hooded Warbler (Setophaga citrina)">Hooded Warbler (Setophaga citrina)</div>
+        <div class="bird-item visible-bird" data-bird="House Finch (Haemorhous mexicanus)">House Finch (Haemorhous mexicanus)</div>
+        <div class="bird-item visible-bird" data-bird="Indigo Bunting (Passerina cyanea)">Indigo Bunting (Passerina cyanea)</div>
+        <div class="bird-item visible-bird" data-bird="Kentucky Warbler (Geothlypis formosa)">Kentucky Warbler (Geothlypis formosa)</div>
+        <div class="bird-item visible-bird" data-bird="Killdeer (Charadrius vociferus)">Killdeer (Charadrius vociferus)</div>
+        <div class="bird-item visible-bird" data-bird="Louisiana Waterthrush (Parkesia motacilla)">Louisiana Waterthrush (Parkesia motacilla)</div>
+        <div class="bird-item visible-bird" data-bird="Mallard (Anas platyrhynchos)">Mallard (Anas platyrhynchos)</div>
+        <div class="bird-item visible-bird" data-bird="Mourning Dove (Zenaida macroura)">Mourning Dove (Zenaida macroura)</div>
+        <div class="bird-item visible-bird" data-bird="new world warbler sp. (Parulidae sp.)">new world warbler sp. (Parulidae sp.)</div>
+        <div class="bird-item visible-bird" data-bird="Northern Cardinal (Cardinalis cardinalis)">Northern Cardinal (Cardinalis cardinalis)</div>
+        <div class="bird-item visible-bird" data-bird="Northern Flicker (Colaptes auratus)">Northern Flicker (Colaptes auratus)</div>
+        <div class="bird-item visible-bird" data-bird="Northern Mockingbird (Mimus polyglottos)">Northern Mockingbird (Mimus polyglottos)</div>
+        <div class="bird-item visible-bird" data-bird="Northern Parula (Setophaga americana)">Northern Parula (Setophaga americana)</div>
+        <div class="bird-item visible-bird" data-bird="Northern Rough-winged Swallow (Stelgidopteryx serripennis)">Northern Rough-winged Swallow (Stelgidopteryx serripennis)</div>
+        <div class="bird-item visible-bird" data-bird="Orchard Oriole (Icterus spurius)">Orchard Oriole (Icterus spurius)</div>
+        <div class="bird-item visible-bird" data-bird="Osprey (Pandion haliaetus)">Osprey (Pandion haliaetus)</div>
+        <div class="bird-item visible-bird" data-bird="Ovenbird (Seiurus aurocapilla)">Ovenbird (Seiurus aurocapilla)</div>
+        <div class="bird-item visible-bird" data-bird="Pileated Woodpecker (Dryocopus pileatus)">Pileated Woodpecker (Dryocopus pileatus)</div>
+        <div class="bird-item visible-bird" data-bird="Pine Warbler (Setophaga pinus)">Pine Warbler (Setophaga pinus)</div>
+        <div class="bird-item visible-bird" data-bird="Prothonotary Warbler (Protonotaria citrea)">Prothonotary Warbler (Protonotaria citrea)</div>
+        <div class="bird-item visible-bird" data-bird="Red-bellied Woodpecker (Melanerpes carolinus)">Red-bellied Woodpecker (Melanerpes carolinus)</div>
+        <div class="bird-item visible-bird" data-bird="Red-breasted Nuthatch (Sitta canadensis)">Red-breasted Nuthatch (Sitta canadensis)</div>
+        <div class="bird-item visible-bird" data-bird="Red-eyed Vireo (Vireo olivaceus)">Red-eyed Vireo (Vireo olivaceus)</div>
+        <div class="bird-item visible-bird" data-bird="Red-headed Woodpecker (Melanerpes erythrocephalus)">Red-headed Woodpecker (Melanerpes erythrocephalus)</div>
+        <div class="bird-item visible-bird" data-bird="Red-shouldered Hawk (Buteo lineatus)">Red-shouldered Hawk (Buteo lineatus)</div>
+        <div class="bird-item visible-bird" data-bird="Red-tailed Hawk (Buteo jamaicensis)">Red-tailed Hawk (Buteo jamaicensis)</div>
+        <div class="bird-item visible-bird" data-bird="Red-winged Blackbird (Agelaius phoeniceus)">Red-winged Blackbird (Agelaius phoeniceus)</div>
+        <div class="bird-item visible-bird" data-bird="Ring-necked Duck (Aythya collaris)">Ring-necked Duck (Aythya collaris)</div>
+        <div class="bird-item visible-bird" data-bird="Rose-breasted Grosbeak (Pheucticus ludovicianus)">Rose-breasted Grosbeak (Pheucticus ludovicianus)</div>
+        <div class="bird-item visible-bird" data-bird="Ruby-crowned Kinglet (Corthylio calendula)">Ruby-crowned Kinglet (Corthylio calendula)</div>
+        <div class="bird-item visible-bird" data-bird="Ruby-throated Hummingbird (Archilochus colubris)">Ruby-throated Hummingbird (Archilochus colubris)</div>
+        <div class="bird-item visible-bird" data-bird="Scarlet Tanager (Piranga olivacea)">Scarlet Tanager (Piranga olivacea)</div>
+        <div class="bird-item visible-bird" data-bird="Song Sparrow (Melospiza melodia)">Song Sparrow (Melospiza melodia)</div>
+        <div class="bird-item visible-bird" data-bird="Summer Tanager (Piranga rubra)">Summer Tanager (Piranga rubra)</div>
+        <div class="bird-item visible-bird" data-bird="Swainson's Thrush (Catharus ustulatus)">Swainson's Thrush (Catharus ustulatus)</div>
+        <div class="bird-item visible-bird" data-bird="Tufted Titmouse (Baeolophus bicolor)">Tufted Titmouse (Baeolophus bicolor)</div>
+        <div class="bird-item visible-bird" data-bird="Turkey Vulture (Cathartes aura)">Turkey Vulture (Cathartes aura)</div>
+        <div class="bird-item visible-bird" data-bird="White-breasted Nuthatch (Sitta carolinensis)">White-breasted Nuthatch (Sitta carolinensis)</div>
+        <div class="bird-item visible-bird" data-bird="White-eyed Vireo (Vireo griseus)">White-eyed Vireo (Vireo griseus)</div>
+        <div class="bird-item visible-bird" data-bird="White-throated Sparrow (Zonotrichia albicollis)">White-throated Sparrow (Zonotrichia albicollis)</div>
+        <div class="bird-item visible-bird" data-bird="Wood Duck (Aix sponsa)">Wood Duck (Aix sponsa)</div>
+        <div class="bird-item visible-bird" data-bird="Wood Thrush (Hylocichla mustelina)">Wood Thrush (Hylocichla mustelina)</div>
+        <div class="bird-item visible-bird" data-bird="Yellow-bellied Sapsucker (Sphyrapicus varius)">Yellow-bellied Sapsucker (Sphyrapicus varius)</div>
+        <div class="bird-item visible-bird" data-bird="Yellow-billed Cuckoo (Coccyzus americanus)">Yellow-billed Cuckoo (Coccyzus americanus)</div>
+        <div class="bird-item visible-bird" data-bird="Yellow-rumped Warbler (Setophaga coronata)">Yellow-rumped Warbler (Setophaga coronata)</div>
+        <div class="bird-item visible-bird" data-bird="Yellow-throated Vireo (Vireo flavifrons)">Yellow-throated Vireo (Vireo flavifrons)</div>
+        <div class="bird-item visible-bird" data-bird="Yellow-throated Warbler (Setophaga dominica)">Yellow-throated Warbler (Setophaga dominica)</div>
+      </div>
+
+
+
+  <!-- The div to display the map -->
+  <div id="topDiv">
+    <img src="https://img.icons8.com/?size=100&id=bjCki5vQLL9b&format=png&color=686961" alt="Logo" class="topDivLogo" height="40px"/>
+    <h1 class="topDivTitle">Twin Lakes State Park app</h1>
+    <img id="infoBtn" class="info-button" src="images/infobutton.png" alt="Information" title="Show intro info">
+  </div>
+  <div id="viewDiv">
+    <div class="popup">
+      <button id="close">&times;</button>
+      <h1>Twin Lakes State Park</h1>
+      <h2>Prince Edward County, Virginia</h2>
+      <p>In the heart of central Virginia, this 548-acre, historic park offers many cultural, environmental and recreational activities. Overnight accommodations include a 33-site campground and 11 climate-controlled cabins. Visitors enjoy swimming, fishing, hiking, boating and lakeside picnicking.</p>
+      <p>The land for Twin Lakes State Park was initially bought from struggling farmers by the federal government during the Great Depression. Two parks, Goodwin Lake Recreational Area and Prince Edward Lake were founded in 1939. In 1948, M. Conrad Martin was denied access to Staunton River State Park, and a subsequent lawsuit filed against the state led to the establishment of "Prince Edward State Park for Negroes" as Virginia’s eighth state park in 1950, under the "separate but equal" doctrine. The two lake parks operated as racially segregated parks until the early 1960s. In 1976, the parks merged, and the site was renamed Twin Lakes State Park in 1986. (Learn more about <a href="https://www.dcr.virginia.gov/state-parks/twin-lakes">Twin Lakes State Park</a>.)</p>
+      <p><b>NAVIGATION OF THE SITE:</b></p>
+      <p>Explore the app to learn more about the park, its amenities, lodging options, and trails. We welcome visitor input on the site as well! Please review--and report on--any issues you see in the park. And for birders, review the information on the bird layer, and report on new bird sightings!</p>
+      <p>The right side of the app is where you can enter location information and--most importantly--add info about bird sightings or any issues you see during your visit. The left helps you modify the map view, turn layers on and off, adjust the view of the bird information, and view the map legend.</p>
+      <p>
+        <div class="navigationarea"> 
+          <table id="navigation">
+            <tr>
+                <td>
+                    <table>
+                        <tr>
+                            <td><img src="images/icon-zoom.gif"></td>
+                            <td>Zoom in and out of the map</td>
+                        </tr>
+                        <tr>
+                            <td><img src="images/icon-locate.gif"></td>
+                            <td>Center the map on your current location</td>
+                        </tr>
+                        <tr>
+                            <td><img src="images/icon-home.gif"></td>
+                            <td>Return to the starting view</td>
+                        </tr>
+                        <tr>
+                            <td><img src="images/icon-layers.gif"></td>
+                            <td>Turn specific layers on and off</td>
+                        </tr>
+                        <tr>
+                            <td><img src="images/icon-legend.gif"></td>
+                        <td>Open and close the map legend &#40;lower left&#41;</td>
+                        </tr>
+                    </table>
+                </td>
+                <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                <td>
+                    <table>
+                        <tr>
+                            <td><img src="images/icon-editor.gif"></td>
+                            <td>Toggle the editor window to add/edit data</td>
+                        </tr>
+                        <tr>
+                            <td>&nbsp;</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td><img src="images/birdoptions.gif" class="bird"><br><ul><li><b>Left:</b> toggles bird layer on/off</li><li><b>Middle:</b> toggles colors - members of same species get same random color, quite the rainbow!</li><li><b>Right:</b> filter by species</li></ul></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+          </table> 
+        </div>
+
+      </p>
+      <p class="creator">
+          Created by Eric Johnson for University of Wisconsin-Madison Geography 577 - Spring 2025
+      </p>
+      <button id="letsGo">
+          <e href="#">Go!</e>
+      </button>
+    </div>
+  </div>
+
+  <!--JavaScript Link-->
+  <script type="text/javascript" src="js/main.js"></script>
+ </body>
+</html>
