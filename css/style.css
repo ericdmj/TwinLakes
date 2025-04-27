@@ -221,6 +221,11 @@ body {
     background-color: #F3F3F3;
   }
 
+  .bird-item.selected {
+    background-color: #F3F3F3;
+    font-weight: bold;
+  }
+
   #topDiv {
     display: flex;
     align-items: center;
@@ -326,3 +331,7 @@ body {
     }
   }
   
+  #birdSearchBox {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }

@@ -6,7 +6,7 @@
         Twin Lakes State Park
     </title>
     <meta charset="utf-8" />
-    <meta content="width=device width,initial-scale=1" name="viewport" />
+    <meta content="width=device width,inital-scale=1" name="viewport" />
     <meta content="" name="description">
     <!-- adding Google font -->
     <link href="https://fonts.googleapis.com" rel="preconnect" />
@@ -65,20 +65,6 @@
                     center: [-78.2726, 37.1732],
                     zoom: 15
                 });
-
-                //sets the zoom levels for layers with icons
-                const iconScaling = [
-                    {
-                        type: "size",
-                        valueExpression: "$view.scale",
-                        stops: [
-                            { value: 8000, size: 8 },
-                            { value: 5000, size: 12 },
-                            { value: 3000, size: 16 },
-                            { value: 1000, size: 32 }
-                        ]
-                    }
-                ];
 
                 // Define a unique value renderer and symbols
                 const parklayerRenderer = {
@@ -192,8 +178,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/cabin.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -202,8 +188,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/tent.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -212,8 +198,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/rv25.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -222,8 +208,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/rv30.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -232,12 +218,11 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/rv36.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         }
-                    ],
-                    visualVariables: iconScaling
+                    ]
                 };
 
                 // makes the lodging labels
@@ -260,61 +245,10 @@
                     minScale: 4000
                 };
 
-                // creates clustering for lodging
-                /* const lodgingClusterConfig = {
-                    type: "cluster",
-                    clusterRadius: "100px",
-                    popupTemplate: {
-                        title: "Cluster summary",
-                        content: "This cluster represents {cluster_count} lodging sites.",
-                        fieldInfos: [
-                        {
-                            fieldName: "cluster_count",
-                            format: {
-                            places: 0,
-                            digitSeparator: true
-                            }
-                        }
-                        ]
-                    },
-                    clusterMinSize: "24px",
-                    clusterMaxSize: "60px",
-
-                    symbol: {
-                        type: "simple-marker",
-                        style: "circle",
-                        color: "#9f8872",
-                        outline: {
-                        color: "rgba(96, 57, 20, 0.5)",
-                        width: 6
-                        }
-                    },
-
-                    labelingInfo: [
-                        {
-                        deconflictionStrategy: "none",
-                        labelExpressionInfo: {
-                            expression: "Text($feature.cluster_count, '#,###')"
-                        },
-                        symbol: {
-                            type: "text",
-                            color: "#4D2042",
-                            font: {
-                            weight: "bold",
-                            family: "Playfair Display",
-                            size: "14px"
-                            }
-                        },
-                        labelPlacement: "center-center"
-                        }
-                    ]
-                }; */
-
                 // brings in lodging layer
                 const lodgingLayer = new FeatureLayer({
                     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/1",
                     renderer: lodginglayerRenderer,
-                    //featureReduction: lodgingClusterConfig, // adding clustering
                     title: "Lodging Locations",
                     labelingInfo: [lodgingLabels], // adding the labels
                     popupEnabled: true,
@@ -338,58 +272,7 @@
                 };
 
 
-                // creates clustering for amenities
-                /* const amenitiesClusterConfig = {
-                    type: "cluster",
-                    clusterRadius: "100px",
-                    popupTemplate: {
-                        title: "Cluster summary",
-                        content: "This cluster represents {cluster_count} amenities.",
-                        fieldInfos: [
-                        {
-                            fieldName: "cluster_count",
-                            format: {
-                            places: 0,
-                            digitSeparator: true
-                            }
-                        }
-                        ]
-                    },
-                    clusterMinSize: "24px",
-                    clusterMaxSize: "60px",
-
-                    symbol: {
-                        type: "simple-marker",
-                        style: "circle",
-                        color: "#a1a79d",
-                        outline: {
-                        color: "rgba(99, 109, 93, 0.5)",
-                        width: 6
-                        }
-                    },
-
-                    labelingInfo: [
-                        {
-                        deconflictionStrategy: "none",
-                        labelExpressionInfo: {
-                            expression: "Text($feature.cluster_count, '#,###')"
-                        },
-                        symbol: {
-                            type: "text",
-                            color: "#4D2042",
-                            font: {
-                            weight: "bold",
-                            family: "Playfair Display",
-                            size: "14px"
-                            }
-                        },
-                        labelPlacement: "center-center"
-                        }
-                    ]
-                }; */
-
-
-                // styles amenities layer
+                // styles aminities layer
                 const amenitieslayerRenderer = {
                     type: "unique-value",
                     field: "Type",
@@ -399,20 +282,9 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/bathhouse.svg",
-                                width: 32,
-                                height: 32
-                            },
-                            visualVariables: [
-                                {
-                                type: "size",
-                                valueExpression: "$view.scale",
-                                stops: [
-                                    { value: 5000, size: 8 },
-                                    { value: 3000, size: 16 },
-                                    { value: 1200, size: 32 }
-                                ]
-                                }
-                            ]
+                                width: "32px",
+                                height: "32px"
+                            }
                         },
                         {
                             value: "boat_ramp",
@@ -420,8 +292,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/boatramp.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -430,8 +302,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/boatrental.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -440,8 +312,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/conferencecenter.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -450,8 +322,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/contactstation.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -460,8 +332,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/dumpingstation.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -470,8 +342,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/firewood.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -480,8 +352,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/fishingpier.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -490,8 +362,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/gazebo.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -500,8 +372,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/giftsshopping.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -510,8 +382,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/contactstation.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -520,8 +392,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/parking.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -530,8 +402,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/picnicshelter.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -540,8 +412,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/playground.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -550,8 +422,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/restroom.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -560,8 +432,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/snackbar.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -570,8 +442,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/swimming.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -580,8 +452,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/trashrecycling.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         },
                         {
@@ -590,12 +462,11 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/vendingdrink.svg",
-                                width: 32,
-                                height: 32
+                                width: "32px",
+                                height: "32px"
                             }
                         }
-                    ],
-                    visualVariables: iconScaling
+                    ]
                 };
 
                 // makes the amenities labels
@@ -622,7 +493,6 @@
                 const amenitiesLayer = new FeatureLayer({
                     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/0",
                     renderer: amenitieslayerRenderer,
-                    //featureReduction: amenitiesClusterConfig, // adding clustering
                     title: "Park Amenities",
                     popupEnabled: true,
                     labelingInfo: [amenitiesLabels],
@@ -656,30 +526,18 @@
                     type: "simple",
                     symbol: {
                         type: "picture-marker",
-                        url: "https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=000000",
-                        width: 16,
-                        height: 16
-                    },
-                    visualVariables: [
-                        {
-                        type: "size",
-                        valueExpression: "$view.scale",  // 👈 Tells it to use the map's scale
-                        stops: [
-                            { value: 5000, size: 4 },    // zoomed far out → tiny birds
-                            { value: 3000, size: 8 },   // medium zoom → medium birds
-                            { value: 1200, size: 16 }     // zoomed in → big birds
-                        ]
-                        }
-                    ]
-                };
-
+                        url: "	https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=000000",
+                        width: "16px",
+                        height: "16px"
+                    }
+                }
 
                 // brings in birds layer
                 const birdsLayer = new FeatureLayer({
                     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/birdobsv/FeatureServer",
                     renderer: birdslayerRenderer,
                     title: "Bird Sightings",
-                    minScale: 5000,
+                    minScale: 10000,
                     definitionExpression: "1=1", // optional, just a placeholder if needed
                     // 👇 This sets the template name that appears in the editor
                     featureReduction: null,
@@ -730,7 +588,7 @@
                 });
 
                 // styles issues layer in editor
-                const issueslayerRenderer = {
+                const issuesRenderer = {
                     type: "unique-value",
                     field: "issuetype",
                     uniqueValueInfos: [{
@@ -739,8 +597,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/blockedpath.png",
-                                width: 22,
-                                height: 22
+                                width: "22px",
+                                height: "22px"
                             }
                         },
                         {
@@ -749,8 +607,8 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/litter.png",
-                                width: 22,
-                                height: 22
+                                width: "22px",
+                                height: "22px"
                             }
                         },
                         {
@@ -759,20 +617,9 @@
                             symbol: {
                                 type: "picture-marker",
                                 url: "images/animalinsect.png",
-                                width: 22,
-                                height: 22
+                                width: "22px",
+                                height: "22px"
                             }
-                        }
-                    ],
-                    visualVariables: [
-                        {
-                            type: "size",
-                            valueExpression: "$view.scale",
-                            stops: [
-                            { value: 3000, size: 8 },
-                            { value: 2000, size: 16 },
-                            { value: 1000, size: 22 }
-                            ]
                         }
                     ]
                 };
@@ -780,10 +627,10 @@
                 // brings in issues layer
                 const issuesLayer = new FeatureLayer({
                     url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/TwinLakes_gdb/FeatureServer/6",
-                    renderer: issueslayerRenderer,
+                    renderer: issuesRenderer,
                     title: "Park Issues",
                     popupEnabled: true,
-                    minScale: 5000,
+                    minScale: 10000,
                     outFields: ["*"],
                     editingEnabled: true,
                     templates: [{
@@ -873,7 +720,7 @@
                                 customCreateText: "Add bird sighting",
                                 formTemplate: {
                                     elements: [{
-   type: "field",
+                                            type: "field",
                                             fieldName: "BIRD_NAME",
                                             label: "Bird Name"
                                         },
@@ -1084,16 +931,10 @@
                     `;
                     rendererToggleBtn.title = "Each species its own color!";
 
-                    let cachedRainbowRenderer = null; // 👈 We'll create it once and reuse it
-
                     rendererToggleBtn.addEventListener("click", () => {
                         useHashedRenderer = !useHashedRenderer;
 
                         if (useHashedRenderer) {
-                            if (cachedRainbowRenderer) {
-                            // If already created once, just reuse it
-                            birdsLayer.renderer = cachedRainbowRenderer;
-                            } else {
                             birdsLayer.queryFeatures({
                                 where: "1=1",
                                 outFields: ["BIRD_NAME"],
@@ -1104,72 +945,43 @@
                                 const birdTypes = [...new Set(result.features.map(f => f.attributes.BIRD_NAME).filter(Boolean))];
 
                                 const uniqueValueInfos = birdTypes.map(bird => {
-                                const color = hashStringToColor(bird);
-                                return {
-                                    value: bird,
-                                    label: bird,
-                                    symbol: {
-                                    type: "picture-marker",
-                                    url: `https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=${color}`,
-                                    width: 16,  // 👈 Must include width and height here
-                                    height: 16
-                                    }
-                                };
-                                });
-
-                                cachedRainbowRenderer = {
-                                    type: "unique-value",
-                                    field: "BIRD_NAME",
-                                    uniqueValueInfos: birdTypes.map(bird => {
-                                        const color = hashStringToColor(bird);
-                                        return {
+                                    const color = hashStringToColor(bird);
+                                    return {
                                         value: bird,
                                         label: bird,
                                         symbol: {
                                             type: "picture-marker",
                                             url: `https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=${color}`,
-                                            width: 16,
-                                            height: 16
+                                            width: "16px",
+                                            height: "16px"
                                         }
-                                        };
-                                    }),
-                                    visualVariables: [
-                                        {
-                                        type: "size",
-                                        valueExpression: "$view.scale",  // 👈 Same fix here
-                                        stops: [
-                                            { value: 5000, size: 4 },
-                                            { value: 3000, size: 8 },
-                                            { value: 1200, size: 16 }
-                                        ]
-                                        }
-                                    ]
+                                    };
+                                });
+
+                                birdsLayer.renderer = {
+                                    type: "unique-value",
+                                    field: "BIRD_NAME",
+                                    uniqueValueInfos: uniqueValueInfos
                                 };
 
-
-                                birdsLayer.renderer = cachedRainbowRenderer;
-                            });
-                            }
-
-                            rendererToggleBtn.innerHTML = `
+                                rendererToggleBtn.innerHTML = `
                             <div style="display: flex; flex-direction: column; align-items: center;">
                                 <img src="https://img.icons8.com/?size=100&id=upaGktG4ajuo&format=png&color=000000" width="16" height="16" alt="Renderer Toggle" />
                                 <span style="font-size: 10px; color: #6A6A6A;">Mono</span>
                             </div>
                             `;
+                            });
                         } else {
                             birdsLayer.renderer = defaultBirdRenderer;
 
                             rendererToggleBtn.innerHTML = `
-                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                <img src="images/rainbowbird.png" width="16" height="16" alt="Renderer Toggle" />
-                                <span style="font-size: 10px; color: #6A6A6A;">Color</span>
-                            </div>
-                            `;
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <img src="images/rainbowbird.png" width="16" height="16" alt="Renderer Toggle" />
+                            <span style="font-size: 10px; color: #6A6A6A;">Color</span>
+                        </div>
+                        `;
                         }
                     });
-
-
 
 
 
@@ -1193,39 +1005,6 @@
                     const birdsElement = document.getElementById("birds-filter");
                     birdsElement.style.display = "none"; // start hidden
 
-                    // Create a close button inside the birds filter panel
-                    const birdsFilterCloseBtn = document.createElement("button");
-                    birdsFilterCloseBtn.textContent = "Close Filter";
-                    birdsFilterCloseBtn.className = "bird-filter-close-btn";  // optional for styling
-                    birdsFilterCloseBtn.style.margin = "5px";
-                    birdsFilterCloseBtn.style.padding = "5px 10px";
-                    birdsFilterCloseBtn.style.fontSize = "12px";
-                    birdsFilterCloseBtn.style.backgroundColor = "#eeeeee";
-                    birdsFilterCloseBtn.style.border = "1px solid #cccccc";
-                    birdsFilterCloseBtn.style.cursor = "pointer";
-
-                    // Create a container to right-align it
-                    const birdsCloseBtnContainer = document.createElement("div");
-                    birdsCloseBtnContainer.style.width = "100%";
-                    birdsCloseBtnContainer.style.textAlign = "right";
-
-                    // Put the button inside the container
-                    birdsCloseBtnContainer.appendChild(birdsFilterCloseBtn);
-
-                    // Insert it at the top of the filter panel
-                    birdsElement.insertBefore(birdsCloseBtnContainer, birdsElement.firstChild);
-
-                    // Make it behave like clicking the filter toggle
-                    birdsFilterCloseBtn.addEventListener("click", () => {
-                        // Remove the bird filter click listener
-                        birdsElement.removeEventListener("click", filterByBird);
-
-                        birdsExpandBtn.click();
-
-                        // (Optional safety: you can add it back later if you reopen the panel)
-                    });
-
-
                     let birdsFilterVisible = false;
 
                     birdsExpandBtn.addEventListener("click", () => {
@@ -1240,21 +1019,10 @@
                         </div>
                         `;
 
-                        if (birdsFilterVisible) {
-                            // Re-attach the bird filter click listener when panel is reopened
-                            birdsElement.addEventListener("click", filterByBird);
-                        } else {
-                            // Clear filter when panel closes
-                            if (editBirdLayer) {
-                                editBirdLayer.filter = null;
-                            }
-                            birdsElement.removeEventListener("click", filterByBird);
-                        }
-
                         // Clear map filter when panel is closed
-                        //if (!birdsFilterVisible && editBirdLayer) {
-                        //    editBirdLayer.filter = null;
-                        // }
+                        if (!birdsFilterVisible && editBirdLayer) {
+                            editBirdLayer.filter = null;
+                        }
                     });
 
 
@@ -1291,98 +1059,11 @@
                     // User clicks on bird name and sets an attribute filter on the bird layer view 
                     // to display the sightings of that bird species
                     function filterByBird(event) {
-                    const selectedBird = event.target.getAttribute("data-bird");
-                    editBirdLayer.filter = {
-                        where: "BIRD_NAME = '" + selectedBird + "'"
-                    };
-
-                    // Remove "selected" class from all bird items
-                    document.querySelectorAll('.bird-item').forEach(item => {
-                        item.classList.remove('selected');
-                    });
-
-                    // Add "selected" class to the clicked item
-                    event.target.classList.add('selected');
-
-                    // Smoothly scroll the selected item into view
-                    event.target.scrollIntoView({ behavior: "smooth", block: "center" });
+                        const selectedBird = event.target.getAttribute("data-bird");
+                        editBirdLayer.filter = {
+                            where: "BIRD_NAME = '" + selectedBird + "'"
+                        };
                     }
-
-
-                    // Grab the bird search box
-                    const birdSearchBox = document.getElementById("birdSearchBox");
-
-                    // === Create a wrapper for the search box ===
-                    const searchWrapper = document.createElement("div");
-                    searchWrapper.style.position = "relative";
-                    searchWrapper.style.width = "100%";
-                    searchWrapper.style.margin = "5px auto";
-
-                    // Get the parent of birdSearchBox
-                    const searchBoxParent = birdSearchBox.parentNode;
-
-                    // Insert the wrapper before the birdSearchBox
-                    searchBoxParent.insertBefore(searchWrapper, birdSearchBox);
-
-                    // Move the birdSearchBox inside the wrapper
-                    searchWrapper.appendChild(birdSearchBox);
-
-                    // === Add a clear (X) button ===
-                    const clearButton = document.createElement("button");
-                    clearButton.innerHTML = "&times;";
-                    clearButton.style.position = "absolute";
-                    clearButton.style.right = "10px";
-                    clearButton.style.top = "50%";
-                    clearButton.style.transform = "translateY(-50%)";
-                    clearButton.style.background = "transparent";
-                    clearButton.style.border = "none";
-                    clearButton.style.fontSize = "18px";
-                    clearButton.style.color = "#999";
-                    clearButton.style.cursor = "pointer";
-                    clearButton.style.display = "none";
-
-                    searchWrapper.appendChild(clearButton);
-
-                    // === Behavior for typing and clearing ===
-
-                    // Show or hide the X button when typing
-                    birdSearchBox.addEventListener("input", () => {
-                        if (birdSearchBox.value.length > 0) {
-                            clearButton.style.display = "block";
-                        } else {
-                            clearButton.style.display = "none";
-                        }
-                    });
-
-                    // Clicking the X clears the input and shows all birds
-                    clearButton.addEventListener("click", () => {
-                        birdSearchBox.value = "";
-                        clearButton.style.display = "none";
-
-                        const birdItems = document.querySelectorAll(".bird-item");
-                        birdItems.forEach((item) => {
-                            item.style.display = "";
-                        });
-                    });
-
-                    birdSearchBox.addEventListener("input", function() {
-                        const query = birdSearchBox.value.toLowerCase();
-                        const birdItems = document.querySelectorAll(".bird-item");
-
-                        birdItems.forEach((item) => {
-                            const birdName = item.textContent.toLowerCase();
-                            if (birdName.includes(query)) {
-                                item.style.display = "";
-                            } else {
-                                item.style.display = "none";
-                            }
-                        });
-                    });
-
-
-
-
-
 
                     view.whenLayerView(birdsLayer).then((layerView) => {
                         editBirdLayer = layerView;
@@ -1474,7 +1155,6 @@
 
     <!-- creates the filter list -->
     <div id="birds-filter" class="esri-widget bird-filter-panel">
-        <input type="text" id="birdSearchBox" placeholder="Search for a bird..." style="width: 100%; height:35px; margin: 5px auto; display: block; padding: 5px; font-size: 12px;">
         <div class="bird-item visible-bird" data-bird="Acadian Flycatcher (Empidonax virescens)">Acadian Flycatcher (Empidonax virescens)</div>
         <div class="bird-item visible-bird" data-bird="American Crow (Corvus brachyrhynchos)">American Crow (Corvus brachyrhynchos)</div>
         <div class="bird-item visible-bird" data-bird="American Goldfinch (Spinus tristis)">American Goldfinch (Spinus tristis)</div>
